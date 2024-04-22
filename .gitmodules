@@ -1,0 +1,3 @@
+[submodule "parsers/serjson"]
+	path = parsers/serjson
+	url = https://github.com/koka-community/serjson
