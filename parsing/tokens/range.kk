@@ -14,7 +14,7 @@ val source/null = Source("", "")
 
 struct pos (pub source: source, pub off: int, pub line: int, pub col: int)
 
-val pos/null = Pos(source/null, -1, 0, 0)
+val pos/null:pos = Pos(source/null, -1, 0, 0)
 
 fun pos/(==)(p1: pos, p2: pos): bool
   p1.line == p2.line && p1.col == p2.col
@@ -57,7 +57,7 @@ fun pos/cmp(p1: pos, p2: pos): order
     o -> o
 
 fun pos/show(p: pos): string
-  "(" ++ p.show-pos(?align-width=2) ++ ")"
+  "(" ++ p.show-pos(2) ++ ")"
 
 fun show-pos(p: pos, ?align-width: int): string
   p.line.show-line() ++ "," ++ p.col.show.pad-left(align-width)
@@ -89,7 +89,7 @@ fun pos-move8(Pos(s, o, l, c), ch: char): pos
     '\n' -> Pos(s, o1, l + 1, 1)
     _    -> Pos(s, o1, l, c + 1)
 
-val tab-size = 2 // Always 2 in koka
+val koka/tab-size = 2 // Always 2 in koka
 
 // source range
 value struct range (pub start: pos, pub end: pos)
@@ -118,18 +118,18 @@ fun range/length(r: range): int
 fun range/is-after(r1: range, r2: range): bool
   r1.end <= r2.start
 
-val range/null = make-range(pos/null, pos/null)
+val range/null:range = range(pos/null, pos/null)
 
-fun show-full-range(cwd: path, r: range): string
+fun range/show-full(cwd: path, r: range): string
   r.show-range(cwd, True)
 
-fun make-range(p1: pos, p2: pos): range
+fun pos2/range(p1: pos, p2: pos): range
   Range(min(p1, p2), max(p1, p2))
 
-fun source(r: range): source
+fun range/source(r: range): source
   r.start.source
 
-fun combine(r1: range, r2: range): range
+fun range/combine(r1: range, r2: range): range
   Range(min(r1.start, r2.start), max(r1.end, r2.end))
 
 fun range-list/combine(rs: list<range>): range
@@ -166,7 +166,7 @@ fun default/range(m: maybe<range>): range
     Just(r) -> r
     Nothing -> null
 
-fun source-from-range(Range(start, end)): string
+fun string/source(Range(start, end)): string
   if start.off >= 0 then
      " ".replicate(start.col - 1).join ++ start.source.contents.slice.subslice(start.off, end.off).string
   else
@@ -185,6 +185,6 @@ fun source-from-range(Range(start, end)): string
           Nil -> ""
       Nil -> ""
 
-fun raw-source-from-range(Range(start, end)): string
+fun string/source-raw(Range(start, end)): string
   val s: sslice = start.source.contents.slice
   s.subslice(start.off, end.off).string
