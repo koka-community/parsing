@@ -240,11 +240,11 @@ fun parseProgram()
   parseEndOfInput()
   p
 
-fun parseTest(parser: () -> parse<string> sexpr, input:string, showX, file="None")
+fun parseTest(parser: () -> <div,parse<string>> a, input:string, file:string="None", ?show: (a) -> div string)
   val result = input.run(parser)
   match result
     Right(x) -> 
-      showX(x)
+      show(x)
       println("Success: ")
     Left(err) -> println("Error: " ++ err.show(input) ++ " in file " ++ file)
 
@@ -307,32 +307,33 @@ fun sexpr/(==)(s1: sexpr, s2: sexpr): bool
     (SCons(h1, t1), SCons(h2, t2)) -> (==)(h1.pretend-decreasing, h2.pretend-decreasing) && (==)(t1.pretend-decreasing, t2.pretend-decreasing)
     _ -> False
 
-alias nameMap = some<e> linearMap<string,int>
-val globalNameGen:ref<global,nameMap> = unsafe-total{ref([])}
+alias nameMap = linearMap<string,int>
+val globalNameGen:ref<global,nameMap> = unsafe-total{ref(LinearMap([]))}
 fun genName(n: string): sexpr
   unsafe-total
     val m = !globalNameGen
     val newM = m.update(n, 1, fn(x, _) x + 1)
     globalNameGen.set(newM)
-    SName(n ++ newM.get-default(n, 0).show)
-// fun main()
-//   parseTest(parseNum, "1.53", show)
-//   parseTest(parseChar, r"#\newline", show)
-//   parseTest(parseBool, "#t", show)
-//   parseTest(parseSymbol, "+", show)
-//   parseTest(parseString, "\"Hello\"", show)
-//   parseTest(parseList, "(+)", show)
-//   parseTest(parseList, "(+ 3 5)", show)
-//   parseTest(parseProgram, "[+ 3 5]", show)
-//   parseTest(parseList, "{+ 3 5 . (list a b c)}", show)
-//   val p = "/Users/timwhiting/koka_code/higher-order-programs/scheme/r6rs/nbody.scm".path
-//   parseTest(parseProgram, read-text-file(p), show, p.show)
-//   programs.foreach fn(p)
-//     parseTest(parseProgram, p, show)
-//   list-directory-recursive("/Users/timwhiting/koka_code/higher-order-programs/scheme".path).foreach fn(p)
-//     if is-file(p) then // nbody
-//       if p.show.ends-with(".scm\"").is-just then
-//         parseTest(parseProgram, read-text-file(p), show, p.show)
+    SName(n ++ newM.lookup(n).default(0).show)
+
+fun test()
+  parseTest(parseNum, "1.53")
+  parseTest(parseChar, r"#\newline")
+  parseTest(parseBool, "#t")
+  parseTest(parseSymbol, "+")
+  parseTest(parseString, "\"Hello\"")
+  parseTest(parseList, "(+)")
+  parseTest(parseList, "(+ 3 5)")
+  parseTest(parseProgram, "[+ 3 5]")
+  parseTest(parseList, "{+ 3 5 . (list a b c)}")
+  // val p = "/Users/timwhiting/koka_code/higher-order-programs/scheme/r6rs/nbody.scm".path
+  // parseTest(parseProgram, read-text-file(p), file=p.show)
+  programs.foreach fn(p1)
+    parseTest(parseProgram, p1)
+  // list-directory-recursive("/Users/timwhiting/koka_code/higher-order-programs/scheme".path).foreach fn(p)
+  //   if is-file(p) then // nbody
+  //     if p.show.ends-with(".scm\"").is-just then
+  //       parseTest(parseProgram, read-text-file(p), file=p.show)
 
 // TODO: Emit tokens including all whitespace etc. Let AST include token references.
 // Really should add macros to Koka so we can dynamically create an AST with tokens for each constructor

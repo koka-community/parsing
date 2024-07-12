@@ -228,7 +228,7 @@ pub fun skipWhile(q: charQuery): <parse<r>|e> ()
 
 pub fun toPattern(q: charQuery): string
   match q
-    OneOf(t) -> "[" ++ t ++ "]"
+    OneOf(t) -> "^[" ++ t ++ "]"
     Ranges(chars) ->
       chars.foldl("^") fn(acc:string, v)
         val (c1:char, c2:char) = v
@@ -304,16 +304,16 @@ pub fun cq/show(q: charQuery): string
         else acc ++ ", " ++ c1.show ++ "-" ++ c2.show
 
 // Common
-val leadingDotRegex = r"[+-]?\.[0-9]+([eE][+-]?[0-9]+)?".regex() 
-val wholeFloatRegex = r"[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?".regex() 
-val plusOrMinusRegex = r"[+-]?".regex()
+val leadingDotRegex = r"^[+-]?\.[0-9]+([eE][+-]?[0-9]+)?".regex() 
+val wholeFloatRegex = r"^[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?".regex() 
+val plusOrMinusRegex = r"^[+-]?".regex()
 
 pub fun parseFloat(): <parse<r>|e> float64
   val pos = offset()
   val result = parseLeadingDotFloat.or(parseWholeFloat)
   match parse-float64(result.string)
     Just(i) -> i
-    Nothing -> failHere(fn(p) Expected("float", pos))
+    Nothing -> failHere(fn(p) Expected("parsable float " ++ result.string, pos))
 
 fun parseWholeFloat(): <parse<r>|e> sslice
   takePattern(wholeFloatRegex)
@@ -321,7 +321,7 @@ fun parseWholeFloat(): <parse<r>|e> sslice
 fun parseLeadingDotFloat(): <parse<r>|e> sslice
   takePattern(leadingDotRegex)
 
-val wholeNumRegex = r"[-+]?[0-9]+".regex() 
+val wholeNumRegex = r"^[-+]?[0-9]+".regex() 
 fun parseInt(): <parse<r>|e> int
   match tryParse({takePattern(wholeNumRegex)})
     Left(e) -> fail(e)
@@ -332,11 +332,11 @@ fun parseInt(): <parse<r>|e> int
         Nothing -> failHere(fn(p) Expected("int", pos))
 
 
-val alphaRegex = "[a-zA-Z]".regex()
+val alphaRegex = "^[a-zA-Z]".regex()
 pub fun takeAlpha(): <parse<r>|e> sslice
   takePattern(alphaRegex)
 
-val alnumRegex = "[a-zA-Z0-9]+".regex()
+val alnumRegex = "^[a-zA-Z0-9]+".regex()
 pub fun takeAlphanum(): <parse<r>|e> sslice
   takePattern(alnumRegex)
 
