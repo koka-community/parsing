@@ -20,7 +20,6 @@ type jslex
 alias action = sslice -> pure jslex
 alias alexInput = sslice
 alias alexUser = ()
-alias alexEff = total
 fun alexGetByte(s: alexInput): maybe<(char, alexInput)>
   s.next()
 
