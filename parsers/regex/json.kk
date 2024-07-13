@@ -35,7 +35,7 @@ fun js/show(v: jsValue)
     JsDouble(d) -> d.show
     JsString(s) -> s.show
     JsArray(l) -> "[" ++ l.map(show).join(", ") ++ "]"
-    JsObject(o) -> "{" ++ o.map(fn ((k, v1)) k ++ ": " ++ v1.js/show).join(",\n ") ++ "}"
+    JsObject(o) -> "{" ++ o.list.map(fn((k, v1)) k ++ ": " ++ v1.js/show).join(",\n ") ++ "}"
 
 fun jsLookup(v: jsValue, keys: list<string>): jsValue
   match keys
@@ -125,7 +125,7 @@ fun pObject()
   pToken("{")
   val members = separatedTrailing(pMember, {pToken(",")})
   optional(pWhitespace)
-  val o = JsObject(members)
+  val o = JsObject(LinearMap([]) + members)
   pToken("}")
   o
 
