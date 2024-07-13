@@ -17,15 +17,17 @@ fun show(j: jslex): string
     JSWhite -> " "
 
 fun main(): io ()
+  with val alextrace = False
   var done := False
   var s := r#"{"name":"Gpa142749579","age":365380512,"children":[{"name":"another child219059342"}],"adult-children":[]}"#.slice
   while({!done})
     match s.alexScan(0)
-      AlexToken(s',_,_) ->
-        // p(s').show.println
+      AlexToken(s',len,p) ->
+        // len.show.println
+        p(s.subslice(0, len)).show.println
         s := s'
       AlexEOF ->
-        // "EOF".println
+        "EOF".println
         done := True
       AlexSkip ->
         // "skip".println
