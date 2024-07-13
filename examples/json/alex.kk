@@ -23,15 +23,12 @@ fun main(): io ()
   while({!done})
     match s.alexScan(0)
       AlexToken(s',len,p) ->
-        // len.show.println
         p(s.subslice(0, len)).show.println
         s := s'
       AlexEOF ->
         "EOF".println
         done := True
       AlexSkip ->
-        // "skip".println
         done := True
       AlexError ->
-        // "error".println
         done := True
