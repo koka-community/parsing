@@ -13,10 +13,6 @@ type parse-state
   PObjCommaEnd(l: ctx<list<(string, json)>>, ps': parse-state)
   Done(v: maybe<json>)
 
-fun json/parse(s: string): pure json
-  with val alextrace = False
-  recur/parse(Done(Nothing), s.slice)
-
 fun add-value(st: parse-state, js: json): exn parse-state
   match st
     PObjValue(l, s, ps) -> PObjCommaEnd(l ++ ctx Cons((s, js), _), ps)
@@ -80,6 +76,10 @@ fun recur/parse(st: parse-state, s: sslice): <alextrace,pure> json
       throw("Alex Skip?")
     AlexError(m) ->
       throw("Alex error" ++ m.string)
+
+fun json/parse(s: string): pure json
+  with val alextrace = False
+  recur/parse(Done(Nothing), s.slice)
 
 fun main()
   val s = r#"{"name":"Gpa142749579","age":365380512,"children":[{"name":"another child219059342"}],"adult-children":[]}"#
