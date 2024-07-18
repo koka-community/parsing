@@ -23,15 +23,15 @@ fun add-value(st: parse-state, js: json): exn parse-state
 
 fun finish-value(st: parse-state): exn parse-state
   match st
-    PList(l, ps) -> ps.add-value(JSList(l ++. Nil))
-    PListCommaEnd(l, ps) -> ps.add-value(JSList(l ++. Nil))
-    PObjCommaEnd(l, ps) -> ps.add-value(JSObj(l ++. Nil))
-    PObjKey(l, ps) -> ps.add-value(JSObj(l ++. Nil))
+    PList(l, ps) -> ps.add-value(JSList(l ++. Nil)) // Allows trailing commas
+    PListCommaEnd(l, ps) -> ps.add-value(JSList(l ++. Nil)) 
+    PObjCommaEnd(l, ps) -> ps.add-value(JSObj(l ++. Nil)) 
+    PObjKey(l, ps) -> ps.add-value(JSObj(l ++. Nil)) // Allows trailing commas
     Done(s) -> Done(s)
     _ -> throw("Invalid state for finishing a value")
 
 fun add-str(st: parse-state, s:sslice): exn parse-state
-  val s' = s.advance(1).extend(-2).string
+  val s' = s.string
   match st
     PObjKey(l, ps) -> PObjColon(l, s', ps)
     _ -> st.add-value(JSString(s'))
@@ -50,6 +50,7 @@ fun recur/parse(st: parse-state, s: sslice): <alextrace,pure> json
     AlexToken(s',len,p) ->
       match p(s.subslice(0, len))
         JSWhite -> parse(st, s')
+        JSComment -> parse(st, s')
         JSArrayOpen -> parse(PList(ctx _, st), s')
         JSObjOpen -> parse(PObjKey(ctx _, st), s')
         JSArrayClose -> parse(st.finish-value, s')
@@ -82,5 +83,16 @@ fun json/parse(s: string): pure json
   recur/parse(Done(Nothing), s.slice)
 
 fun main()
-  val s = r#"{"name":"Gpa142749579","age":365380512,"children":[{"name":"another child219059342"}],"adult-children":[]}"#
+  val s = r#"{
+    "name":"Gpa142749579",
+    "age":365380512, // Wow you are old
+    "children": [{
+        // This is a comment
+       "name":"another child219059342", // Interesting name
+     }],
+    "adult-children":[
+      // No adults here
+    ], // Trailing comma
+    // something here 
+   }"#
   s.parse.pretty.show.println

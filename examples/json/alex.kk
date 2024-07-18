@@ -15,6 +15,7 @@ fun show(j: jslex): string
     JSArrayClose -> "]"
     JSValueSep -> ","
     JSWhite -> " "
+    JSComment(str) -> "//" ++ str.string
 
 fun main(): io ()
   with val alextrace = False
