@@ -61,7 +61,7 @@ fun pColon()
   is-token(":", is-jsobjColon)
 
 fun pStr()
-  map-token("string", is-jsstr, fn(JSStr(s)) s.advance(1).extend(-2).string)
+  map-token("string", is-jsstr, fn(JSStr(s)) s.string)
 
 fun pNum()
   with n <- map-token("num", json-parse/is-jsnum)
