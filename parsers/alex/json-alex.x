@@ -30,6 +30,7 @@ fun alexInputPrevChar(s: alexInput): char
 }
 
 %encoding "utf8"
+%wrapper "no-effect"
 
 -----------------------------------------------------------
 -- Character sets
@@ -53,10 +54,10 @@ $cont         = [\x80-\xBF]
 @digits       = $digit+
 @exponent     = $exp $sign? @digits
 @fraction     = '.' @digits
-@integer      = $digit
+@integer      = $sign $digit
+              | $sign $onenine @digits
+              | $digit
               | $onenine @digits
-              | '-' digit
-              | '-' $onenine @digits
 
 @number       = @integer @fraction? @exponent?
 @escape       = \" | '\\' | '\/' | 'b' | 'f' | 'n' | 'r' | 't' | 'u' $hex $hex $hex $hex
