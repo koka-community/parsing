@@ -51,7 +51,7 @@ fun pnot(rid: ruleid, p: parser<v,t,a,e>, ?a/inj: (a) -> pure v, ?a/extract: (v)
   choices([{p(); none()}, {()}])
 
 // A combinator that succeeds with `Just` when `p` succeeds, and `Nothing` when `p` fails
-fun pmaybe(rid: ruleid, p: parser<v,t,a,e>, ?kk-file-line, ?inj: maybe<a> -> pure v, ?extract: v -> pure maybe<a>): parse<v,t,e> maybe<a>
+fun pmaybe(rid: ruleid, p: parser<v,t,a,e>, ?inj: maybe<a> -> pure v, ?extract: v -> pure maybe<a>): parse<v,t,e> maybe<a>
   with memo(RMaybe(rid))
   choices([{Just(p())}, {Nothing}])
 

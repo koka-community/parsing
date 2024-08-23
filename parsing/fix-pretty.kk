@@ -1,7 +1,7 @@
 import parsing/fixpoint
 import std/pretty/pprint
-pub import std/data/linearmap
-import std/data/linearset
+pub import std/data/rb-map
+import std/data/rb-set
 
 fun cache/pretty(cache: parse-cache<c,l>, ?r/pretty: ruleid -> pure doc, ?l/pretty: l -> pure doc, ?c/pretty: c -> pure doc): pure doc
   val res = cache.list.map  fn((s, m)) 
