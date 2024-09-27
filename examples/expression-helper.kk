@@ -26,7 +26,7 @@ fun ruleid/order2(r1: ruleid, r2: ruleid): pure order2<ruleid>
     (RInt, _) -> Lt2(RInt, r2)
     (_, RInt) -> Gt2(RInt, r1)
     (RToken(s1), RToken(s2)) ->
-      match s1.order2(s2)
+      match s1.str/order2(s2)
         Lt2(s1', s2') -> Lt2(RToken(s1'), RToken(s2'))
         Eq2(s0') -> Eq2(RToken(s0'))
         Gt2(s2', s1') -> Gt2(RToken(s2'), RToken(s1'))
@@ -91,7 +91,7 @@ fun pvalue/order2(p1: pvalue, p2: pvalue): pure order2<pvalue>
     (PChar(c1), _) -> Lt2(PChar(c1), p2)
     (_, PChar(c2)) -> Gt2(PChar(c2), p1)
     (PString(s1), PString(s2)) -> 
-      match s1.order2(s2)
+      match s1.str/order2(s2)
         Lt2(s1', s2') -> Lt2(PString(s1'), PString(s2'))
         Eq2(s0') -> Eq2(PString(s0'))
         Gt2(s2', s1') -> Gt2(PString(s2'), PString(s1'))
@@ -128,7 +128,7 @@ fun pvalue/order2(p1: pvalue, p2: pvalue): pure order2<pvalue>
     (PEOF, _) -> Lt2(PEOF, p2)
     (_, PEOF) -> Gt2(PEOF, p1)
     (PApp(f1, args1), PApp(f2, args2)) -> 
-      match f1.order2(f2)
+      match f1.str/order2(f2)
         Lt2(f1', f2') -> Lt2(PApp(f1', args1), PApp(f2', args2))
         Gt2(f2', f1') -> Gt2(PApp(f2', args2), PApp(f1', args1))
         Eq2(f0') -> 

@@ -27,7 +27,7 @@ fun pvalue/order2(p1: pvalue, p2: pvalue): pure order2<pvalue>
     (PList, _) -> Lt2(p1, p2)
     (_, PList) -> Gt2(p2, p1)
     (PString(s1), PString(s2)) ->
-      match s1.order2(s2)
+      match s1.str/order2(s2)
         Eq2(s) -> Eq2(PString(s))
         Lt2(s1', s2') -> Lt2(PString(s1'), PString(s2'))
         Gt2(s2', s1') -> Gt2(PString(s2'), PString(s1'))
@@ -112,7 +112,7 @@ fun rid/order2(a: ruleid, b: ruleid): pure order2<ruleid>
     (RMaybe, _) -> Lt2(a, b)
     (_, RMaybe) -> Gt2(b, a)
     (RToken(s1), RToken(s2)) -> 
-      match s1.order2(s2)
+      match s1.str/order2(s2)
         Eq2(s) -> Eq2(RToken(s))
         Lt2(s1', s2') -> Lt2(RToken(s1'), RToken(s2'))
         Gt2(s2', s1') -> Gt2(RToken(s2'), RToken(s1'))
