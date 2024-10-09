@@ -24,24 +24,36 @@ fun finish-value(st: parse-state): exn parse-state
 
 fun parse-json(str: string): pure json
   var object := Done(Nothing)
+  var indent := 0
   with handler
     fun do-emit(j: json)
+      trace(indent.spaces ++ "Emit " ++ j.show)
       object := object.add-value(j)
     fun start-object()
+      trace(indent.spaces ++ "StartO")
       object := PObjKey(ctx _, object)
+      indent := indent + 2
     fun start-array()
+      trace(indent.spaces ++ "StartA")
+      indent := indent + 2
       object := PList(ctx _, object)
     fun finish-object()
+      indent := indent - 2
+      trace(indent.spaces ++ "FinishO")
       object := object.finish-value
     fun finish-array()
+      indent := indent - 2
+      trace(indent.spaces ++ "FinishA")
       object := object.finish-value
     fun add-key(s: string)
+      trace(indent.spaces ++ "Add key " ++ s)
       match object
         PObjKey(l, ps) -> object := PObjValue(l, s, ps)
     return(x)
       match object
         Done(Just(j)) -> j
   alex-scan(str.slice, 0)
+  trace("Done")
 
 fun main()
   val s = r#"{

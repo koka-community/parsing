@@ -66,26 +66,39 @@ $cont         = [\x80-\xBF]
 @commentchar  = ([$graphic$space$tab] # [\/\*])|@newline|@utf8
 @whitespace   = [$space$tab]+|@newline
 @linechar     = [$graphic$space$tab]|@utf8
+@comment      = "//" @linechar* @newline
 -----------------------------------------------------------
 -- Main tokenizer
 -----------------------------------------------------------
 program :-
 -- white space
-<0> "//" @linechar* @newline { fn() () }
+-- State 0 is expecting object, array or value
+<0> @comment                 { fn() () }
 <0> @whitespace              { fn() () }
 <0> @number                  { fn() emit(JSNum(parse-float64(get-string()).unjust)) }
 <0> "true"                   { fn() emit(JSBool(True)) }
 <0> "false"                  { fn() emit(JSBool(False)) }
 <0> "null"                   { fn() emit(JSNull) }
 <0> @string                  { fn() emit(JSString(get-slice().advance(1).extend(-2).string)) }
-<0> "{"                      { fn() {push-state(objectfield); start-object()}}
-<0> "["                      { fn() {push-state(array); start-array()} }
+<0> "{"                      { fn() {push-state(object); push-state(objectfield); start-object()}} -- Enter into object state expecting first key
+<0> "["                      { fn() {push-state(array); push-state(0); start-array()} } -- Enter into array state expecting first value.
+<0> "]"                      { fn() {pop-state(); pop-state(); pop-state(); finish-array(); } } -- Allows trailing commas, but also need to pop the array state, the state object
 
-<objectfield> @string        { fn() add-key(get-slice().advance(1).extend(-2).string) }
+<objectfield> @comment       { fn() () }
+<objectfield> @whitespace    { fn() () }
+<objectfield> @string        { fn() {add-key(get-slice().advance(1).extend(-2).string); replace-state(objecttransition)}; } -- Key found, expect colon
+<objectfield> "}"            { fn() {pop-state(); pop-state(); finish-object()} }  -- Allows trailing commas
 
+<objecttransition> @comment    { fn() () }
+<objecttransition> @whitespace { fn() () }
+<objecttransition> ":"       { fn() replace-state(0) } -- Now expect value, after it gets popped we will be in object expecting comma or closing brace
+
+<object> @comment            { fn() () }
+<object> @whitespace         { fn() () }
 <object> ","                 { fn() push-state(objectfield); }
-<object> ":"                 { fn() push-state(0) }
 <object> "}"                 { fn() {pop-state(); finish-object()} }
 
+<array> @comment             { fn() () }
+<array> @whitespace          { fn() () }
 <array> ","                  { fn() push-state(0); }
 <array> "]"                  { fn() {pop-state(); finish-array()} }
