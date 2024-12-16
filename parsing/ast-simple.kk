@@ -164,6 +164,8 @@ fun pmanyend1(kind: string, l: () -> <ast<l>|e> a, p: () -> <ast<l>|e> b): <ast<
     Just(r) -> 
       match poption("sep " ++ kind, p)
         Just(_) -> Cons(r, pmanyend(kind, l.pretend-decreasing, p.pretend-decreasing))
+        Nothing -> Cons(r, Nil)
+    Nothing -> astError("at least 1 of " ++ kind)
 
 // Parse a token
 fun ptoken(msg: string, f: (l) -> <ast<l>|e> maybe<a>, ?show: (l) -> pure string): <ast<l>|e> a
