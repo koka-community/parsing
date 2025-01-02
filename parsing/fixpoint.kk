@@ -212,7 +212,7 @@ fun fix/each(ls: list<parser<v,t,a,e>>): parse<v,t,e> a
   set-slice(start)
   f()
 
-fun fix/choices(ls: list<parser<v,t,a,e>>): parse<v,t,e> a
+fun fix/parse-choices(ls: list<parser<v,t,a,e>>): parse<v,t,e> a
   val start = get-slice()
   val f = do-choice(ls)
   set-slice(start)

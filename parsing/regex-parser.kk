@@ -19,12 +19,12 @@ pub effect parse-fail<e>
 pub alias parse<e> = <parse-try<e>,parse-fail<e>>
 
 pub effect parse-try<e>
-  fun tryText(s: string): either<perror<e>, ()>
+  fun try-text(s: string): either<perror<e>, ()>
   fun unmark(i: int): ()
   fun reset(i: int): ()
-  fun tryPattern(p: regex): either<perror<e>, list<sslice>>
-  fun trySkip(i: int): either<perror<e>, ()>
-  fun tryTake(i: int): either<perror<e>, string>
+  fun try-pattern(p: regex): either<perror<e>, list<sslice>>
+  fun try-skip(i: int): either<perror<e>, ()>
+  fun try-take(i: int): either<perror<e>, string>
   fun offset(): int
   fun mark(): int
 
@@ -32,7 +32,7 @@ pub alias parser<r,a,e::E> = () -> <parse<r>|e> a
 
 pub fun atomic(p: parser<r,a,e>): <parse<r>|e> a
   val n = mark()
-  match tryParse(p)
+  match try-parse(p)
     Left(e) ->
       reset(n)
       fail(e)
@@ -84,7 +84,7 @@ pub fun optional(p: parser<r,a,e>): <parse<r>|e> maybe<a>
 
 pub fun or(p1: parser<r,a,e>, p2: parser<r,a,e>): <parse<r>|e> a
   val o1 = offset()
-  match tryParse(p1)
+  match try-parse(p1)
     Left(e) ->
       if offset() == o1 then 
         p2() 
@@ -99,14 +99,14 @@ pub fun ors(ps: list<parser<r,a,e>>): <parse<r>|e> a
     Cons(p, pp) -> or(p, fn() ors(pp))
 
 pub fun productL(a: parser<r,a,e>, b: parser<r,b,e>): <parse<r>|e> a
-  match tryParse(a)
+  match try-parse(a)
     Left(e) -> fail(e)
     Right(r) ->
       b()
       r
 
 pub fun productR(a: parser<r,a,e>, b: parser<r,b,e>): <parse<r>|e> b
-  match tryParse(a)
+  match try-parse(a)
     Left(e) -> fail(e)
     Right(_) ->
       val vb = b()
@@ -117,21 +117,21 @@ pub fun reraise(p: parser<r,either<perror<r>,a>,e>): <parse<r>|e> a
     Left(e) -> fail(e)
     Right(r) -> r
 
-pub fun takeAdvance(s: sslice, i: int): (list<char>, sslice)
+pub fun take-advance(s: sslice, i: int): (list<char>, sslice)
   if i == 0 then ([], s) else
     match s.next
       Nothing -> ([], s)
       Just((c,rest)) ->
-        val (cs, newS) = takeAdvance(pretend-decreasing(rest), i - 1)
+        val (cs, newS) = take-advance(pretend-decreasing(rest), i - 1)
         (Cons(c, cs), newS)
 
-pub fun startsWith(s: sslice, cs: list<char>): (bool, sslice, int)
+pub fun starts-with(s: sslice, cs: list<char>): (bool, sslice, int)
   match cs
     Nil -> (True, s, 0)
     Cons(c', cs') ->
       match s.next
         Just((c, rest)) | c' == c ->
-          val (r, re, i) = startsWith(rest.pretend-decreasing, cs'.pretend-decreasing)
+          val (r, re, i) = starts-with(rest.pretend-decreasing, cs'.pretend-decreasing)
           (r, re, i + 1)
         _ -> 
           (False, s, 0)
@@ -145,21 +145,21 @@ pub fun run(s: string, parser: parser<r,a,<exn|e>>): <exn|e> either<perror<r>, a
     final ctl fail(e)
       Left(e)
   handle(parser)
-    fun tryTake(i: int)
+    fun try-take(i: int)
       if i > rem.count then Left(NotEnough(i, offset))
       else
-        val (taken, rest) = rem.takeAdvance(i)
+        val (taken, rest) = rem.take-advance(i)
         rem := rest
         offset := offset + i
         Right(taken.string)
-    fun trySkip(i: int)
+    fun try-skip(i: int)
       if i > rem.count then Left(NotEnough(i, offset))
       else
         rem := rem.advance(i)
         offset := offset + i
         Right(())
-    fun tryText(t: string)
-      val (v, rem', cnt) = rem.startsWith(t.list)
+    fun try-text(t: string)
+      val (v, rem', cnt) = rem.starts-with(t.list)
       if v then
         rem := rem'
         offset := offset + cnt
@@ -167,7 +167,7 @@ pub fun run(s: string, parser: parser<r,a,<exn|e>>): <exn|e> either<perror<r>, a
       else Left(Expected(t, offset))
     fun offset()
       offset
-    fun tryPattern(pat: regex)
+    fun try-pattern(pat: regex)
       match pat.exec(rem.string) // TODO: Remove when slice regex is supported
         Nil -> 
           Left(ExpectedPatternMatch(pat.source, offset))
@@ -195,7 +195,7 @@ pub fun run(s: string, parser: parser<r,a,<exn|e>>): <exn|e> either<perror<r>, a
 
 pub fun scope(t: string, p: parser<r,a,e>): <parse<r>|e> a
   val off = offset()
-  match tryParse(p)
+  match try-parse(p)
     Left(e) -> fail(In(t, off, e))
     Right(r) -> r
 
@@ -207,12 +207,12 @@ pub fun sep1(s: parser<r,s,<div|e>>, p: parser<r,a,<div|e>>): <parse<r>,div|e> l
       p()
   )
 
-pub fun skipUntil(q: charQuery): <parse<r>|e> ()
-  val p = notInPattern(q)
-  takePattern(p.regex)
+pub fun skip-until(q: charQuery): <parse<r>|e> ()
+  val p = not-in-pattern(q)
+  take-pattern(p.regex)
   ()
 
-pub fun notInPattern(q: charQuery): string
+pub fun not-in-pattern(q: charQuery): string
   match q
     OneOf(t) -> "^[^" ++ t ++ "]"
     Ranges(chars) ->
@@ -221,12 +221,12 @@ pub fun notInPattern(q: charQuery): string
         val p = "[^" ++ c1.show ++ "-" ++ c2.show ++ "]"
         if acc.is-empty then p else acc ++ "|" ++ p
 
-pub fun skipWhile(q: charQuery): <parse<r>|e> ()
+pub fun skip-while(q: charQuery): <parse<r>|e> ()
   //TODO: Encourage caching regexes for charQueries, or intern them?
-  takePattern(q.toPattern.regex)
+  take-pattern(q.to-pattern.regex)
   ()
 
-pub fun toPattern(q: charQuery): string
+pub fun to-pattern(q: charQuery): string
   match q
     OneOf(t) -> "^[" ++ t ++ "]"
     Ranges(chars) ->
@@ -235,33 +235,33 @@ pub fun toPattern(q: charQuery): string
         val p = "[" ++ c1.show ++ "-" ++ c2.show ++ "]"
         if acc.is-empty then p else acc ++ "|" ++ p
 
-pub fun takeChars(i: int): <parse<r>|e> string
-  reraise({tryTake(i)})
+pub fun take-chars(i: int): <parse<r>|e> string
+  reraise({try-take(i)})
 
-pub fun takePattern(p: regex): <parse<r>|e> sslice
-  val res = reraise({tryPattern(p)})
+pub fun take-pattern(p: regex): <parse<r>|e> sslice
+  val res = reraise({try-pattern(p)})
   res[0].default("".slice)
 
-pub fun takePatterns(p: regex): <parse<r>|e> list<sslice>
-  reraise({tryPattern(p)})
+pub fun take-patterns(p: regex): <parse<r>|e> list<sslice>
+  reraise({try-pattern(p)})
 
-pub fun takeUntil(q: charQuery): <parse<r>|e> sslice
-  takePattern(notInPattern(q).regex)
+pub fun take-until(q: charQuery): <parse<r>|e> sslice
+  take-pattern(not-in-pattern(q).regex)
 
-pub fun takeWhile(q: charQuery): <parse<r>|e> sslice
-  takePattern(q.toPattern.regex)
+pub fun take-while(q: charQuery): <parse<r>|e> sslice
+  take-pattern(q.to-pattern.regex)
 
-pub fun takeWhile1(q: charQuery): <parse<r>|e> sslice
+pub fun take-while1(q: charQuery): <parse<r>|e> sslice
   val initial = offset()
-  val res = takePattern(q.toPattern.regex)
+  val res = take-pattern(q.to-pattern.regex)
   if offset() == initial then fail(ExpectedCharQuery(q, initial))
   else res
 
-pub fun takeWhitespace(): <parse<r>|e> sslice
-  takeWhile(OneOf(" \t\r"))
+pub fun take-whitespace(): <parse<r>|e> sslice
+  take-while(OneOf(" \t\r"))
 
 pub fun text(t: string): <parse<r>|e> ()
-  reraise({tryText(t)})
+  reraise({try-text(t)})
 
 pub fun str/token(t: string): <parse<r>|e> string
   text(t)
@@ -269,13 +269,13 @@ pub fun str/token(t: string): <parse<r>|e> string
 
 pub fun parser/token(p: parser<r,a,e>): <parse<r>|e> a
   val res = p()
-  skipWhitespace()
+  skip-whitespace()
   res
 
 pub fun tokenize(p: parser<r,a,e>): <parse<r>,div|e> list<sslice>
-  sep1(skipWhitespace, nonWhitespace)
+  sep1(skip-whitespace, take-non-whitespace)
 
-pub fun tryParse(p: parser<r,a,e>): <parse<r>|e> either<perror<r>,a>
+pub fun try-parse(p: parser<r,a,e>): <parse<r>|e> either<perror<r>,a>
   with override
     return(a) Right(a)
     final ctl fail(e) Left(e)
@@ -283,14 +283,14 @@ pub fun tryParse(p: parser<r,a,e>): <parse<r>|e> either<perror<r>,a>
 
 pub fun perr/show(e: perror<e>, input: string, indent:string="", ?show: (e) -> string): string
   match e
-    ExpectedCharQuery(q, offset) -> indent ++ "Expected " ++ q.show ++ " at " ++ offset.show ++ " but found " ++ showLineOffset(input, offset)
-    ExpectedPatternMatch(pat, offset) -> indent ++ "Expected pattern " ++ pat ++ " at " ++ offset.show ++ " but found " ++ showLineOffset(input, offset)
-    Expected(t, offset) -> indent ++ "Expected " ++ t ++ " at " ++ offset.show ++ " but found " ++ showLineOffset(input, offset)
-    NotEnough(i, offset) -> indent ++ "Not enough input at " ++ offset.show ++ ", expected " ++ i.show ++ " but found " ++ showLineOffset(input, offset)
-    In(label, offset, err) -> indent ++ "In " ++ label ++ " at position " ++ offset.show ++ " found " ++ showLineOffset(input, offset) ++ "\n" ++ show(err, input, indent ++ "  ")
-    UserDefined(err, offset) -> indent ++ show(err) ++ " but found " ++ showLineOffset(input, offset)
+    ExpectedCharQuery(q, offset) -> indent ++ "Expected " ++ q.show ++ " at " ++ offset.show ++ " but found " ++ show-line-offset(input, offset)
+    ExpectedPatternMatch(pat, offset) -> indent ++ "Expected pattern " ++ pat ++ " at " ++ offset.show ++ " but found " ++ show-line-offset(input, offset)
+    Expected(t, offset) -> indent ++ "Expected " ++ t ++ " at " ++ offset.show ++ " but found " ++ show-line-offset(input, offset)
+    NotEnough(i, offset) -> indent ++ "Not enough input at " ++ offset.show ++ ", expected " ++ i.show ++ " but found " ++ show-line-offset(input, offset)
+    In(label, offset, err) -> indent ++ "In " ++ label ++ " at position " ++ offset.show ++ " found " ++ show-line-offset(input, offset) ++ "\n" ++ show(err, input, indent ++ "  ")
+    UserDefined(err, offset) -> indent ++ show(err) ++ " but found " ++ show-line-offset(input, offset)
 
-fun showLineOffset(s: string, offset: int): string
+fun show-line-offset(s: string, offset: int): string
   val sub = s.slice.advance(offset)
   sub.advance(-10).subslice(0, min(offset, 10)).string ++ "(->" ++ sub.subslice(0,1).string ++ "<-)" ++ sub.subslice(1, 10).string
 
@@ -308,22 +308,22 @@ val leadingDotRegex = r"^[+-]?\.[0-9]+([eE][+-]?[0-9]+)?".regex()
 val wholeFloatRegex = r"^[+-]?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?".regex() 
 val plusOrMinusRegex = r"^[+-]?".regex()
 
-pub fun parseFloat(): <parse<r>|e> float64
+pub fun parse-float(): <parse<r>|e> float64
   val pos = offset()
-  val result = parseLeadingDotFloat.or(parseWholeFloat)
+  val result = parse-leading-dot-float.or(parse-whole-float)
   match parse-float64(result.string)
     Just(i) -> i
     Nothing -> failHere(fn(p) Expected("parsable float " ++ result.string, pos))
 
-fun parseWholeFloat(): <parse<r>|e> sslice
-  takePattern(wholeFloatRegex)
+fun parse-whole-float(): <parse<r>|e> sslice
+  take-pattern(wholeFloatRegex)
 
-fun parseLeadingDotFloat(): <parse<r>|e> sslice
-  takePattern(leadingDotRegex)
+fun parse-leading-dot-float(): <parse<r>|e> sslice
+  take-pattern(leadingDotRegex)
 
 val wholeNumRegex = r"^[-+]?[0-9]+".regex() 
-fun parseInt(): <parse<r>|e> int
-  match tryParse({takePattern(wholeNumRegex)})
+fun parse-int(): <parse<r>|e> int
+  match try-parse({take-pattern(wholeNumRegex)})
     Left(e) -> fail(e)
     Right(x) -> 
       val pos = offset()
@@ -333,57 +333,57 @@ fun parseInt(): <parse<r>|e> int
 
 
 val alphaRegex = "^[a-zA-Z]".regex()
-pub fun takeAlpha(): <parse<r>|e> sslice
-  takePattern(alphaRegex)
+pub fun take-alpha(): <parse<r>|e> sslice
+  take-pattern(alphaRegex)
 
 val alnumRegex = "^[a-zA-Z0-9]+".regex()
-pub fun takeAlphanum(): <parse<r>|e> sslice
-  takePattern(alnumRegex)
+pub fun take-alphanum(): <parse<r>|e> sslice
+  take-pattern(alnumRegex)
 
-pub fun takeAlphanum1(): <parse<r>|e> sslice
-  takePattern(alnumRegex)
+pub fun take-alphanum1(): <parse<r>|e> sslice
+  take-pattern(alnumRegex)
 
-pub fun skipWhitespace(): <parse<r>|e> ()
-  skipWhile(OneOf(" \t\r\n"))
+pub fun skip-whitespace(): <parse<r>|e> ()
+  skip-while(OneOf(" \t\r\n"))
 
-pub fun parseSlash(): <parse<r>|e> ()
+pub fun parse-slash(): <parse<r>|e> ()
   text("/")
 
-pub fun parseSpace(): <parse<r>|e> ()
+pub fun parse-space(): <parse<r>|e> ()
   text(" ")
 
-pub fun nonWhitespace(): <parse<r>|e> sslice
-  takeWhile1(Ranges([('!', '~')]))
+pub fun take-non-whitespace(): <parse<r>|e> sslice
+  take-while1(Ranges([('!', '~')]))
 
-pub fun parseOpenParen(): <parse<r>|e> ()
+pub fun parse-open-paren(): <parse<r>|e> ()
   text("(")
 
-pub fun parseCloseParen(): parse<e> ()
+pub fun parse-close-paren(): parse<e> ()
   text(")")
 
-pub fun parseColon(): parse<e> ()
+pub fun parse-colon(): parse<e> ()
   text(":")
 
-pub fun parseComma(): parse<e> ()
+pub fun parse-comma(): parse<e> ()
   text(",")
 
-pub fun parseCrlf(): parse<e> ()
+pub fun parse-clrf(): parse<e> ()
   text("\r\n")
 
-pub fun parseNewline(): <parse<r>|e> ()
+pub fun parse-newline(): <parse<r>|e> ()
   text("\n")
 
-pub fun parseEndOfLine(): parse<e> ()
-  parseNewline.or(parseCrlf)
+pub fun parse-end-of-line(): parse<e> ()
+  parse-newline.or(parse-clrf)
 
-pub fun parseEndOfInput(): parse<e> ()
+pub fun parse-end-of-input(): parse<e> ()
   with atomic
   val posMarker = offset()
-  match tryTake(1)
+  match try-take(1)
     Left(_) -> ()
     Right(_) -> fail(Expected("End of string", posMarker))
 
-pub fun separatedTrailing(p: parser<r,a,<div|e>>, sep: parser<r,b,<div|e>>): <div,parse<r>|e> list<a>
+pub fun parse-sep-trailing(p: parser<r,a,<div|e>>, sep: parser<r,b,<div|e>>): <div,parse<r>|e> list<a>
   val x = optional(p)
   match x
     Just(x1) -> 

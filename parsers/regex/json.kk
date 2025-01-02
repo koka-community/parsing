@@ -62,90 +62,90 @@ fun jsFind(v: jsValue, def: jsValue, keys: list<string>): jsValue
 
 val hexLeadRegex = r"0[xX]".regex();
 fun hexadecimal()
-  takePattern(leadingRegex).string ++ takePattern(hexLeadRegex).string ++ takePattern(integerRegex).string
+  take-pattern(leadingRegex).string ++ take-pattern(hexLeadRegex).string ++ take-pattern(integerRegex).string
 
 val leadingHexDotRegex = r"^.[0-9a-fA-F_]+([eEpP][+-]?[0-9a-fA-F_]+)?".regex() 
 val wholeHexFloatRegex = r"^[0-9a-fA-F_]+(\.[0-9a-fA-F_]+)?([eEpP][+-]?[0-9a-fA-F_]+)?".regex() 
 val integerRegex = r"^[0-9a-fA-F_]+".regex() 
 fun integer()
-  takePattern(leadingRegex).string ++ takePattern(integerRegex).string
+  take-pattern(leadingRegex).string ++ take-pattern(integerRegex).string
 
 val leadingRegex = r"[+-]".regex()
-fun exp()
-  takePattern(leadingRegex).string ++ integer()
+fun parse-exp()
+  take-pattern(leadingRegex).string ++ integer()
   
-fun decfloat()
-  takePattern(leadingRegex).string ++ (fn() takePattern(wholeHexFloatRegex).string).or({takePattern(leadingHexDotRegex).string})
+fun parse-decfloat()
+  take-pattern(leadingRegex).string ++ (fn() take-pattern(wholeHexFloatRegex).string).or({take-pattern(leadingHexDotRegex).string})
 
-fun hexfloat()
-  takePattern(leadingRegex).string ++ hexadecimal() ++ (fn() takePattern(wholeHexFloatRegex).string).or({takePattern(leadingHexDotRegex).string})
+fun parse-hexfloat()
+  take-pattern(leadingRegex).string ++ hexadecimal() ++ (fn() take-pattern(wholeHexFloatRegex).string).or({take-pattern(leadingHexDotRegex).string})
 
-fun pLit()
+fun parse-literal()
   with scope("plit")
   ors([{text("true"); JsBool(True)},{text("false"); JsBool(False)},{text("null"); JsNull}])
 
-fun pFloat()
+fun parse-float()
   with atomic
-  val d = or({decfloat().split("_").join}, {hexfloat().split("_").join})
+  val d = or({parse-decfloat().split("_").join}, {parse-hexfloat().split("_").join})
   JsDouble(d)
 
-fun pInteger()
+fun parse-integer()
   with atomic
   val d = integer().split("_").join
   JsInt(d)
 
 val stringRegex = "^\"[^\\\\\"]*(?:\\\\.[^\"\\\\]*)*\"".regex()
 
-inline fun takeString()
-  takePattern(stringRegex)
+inline fun parse-str()
+  take-pattern(stringRegex)
 
-fun pString()
-  with scope("pstring")
-  val s = takeString()
+fun parse-string()
+  with scope("parse-string")
+  val s = parse-str()
   JsString(s.subslice(1, s.count - 1).string)
 
-fun pArray()
-  with scope("parray")
-  pToken("[")
-  val xs = separatedTrailing(pValue,{pToken(",")})
-  optional(pWhitespace)
-  pToken("]")
+fun parse-array()
+  with scope("parse-array")
+  parse-token("[")
+  val xs = parse-sep-trailing(parse-value,{parse-token(",")})
+  optional(parse-whitespace)
+  parse-token("]")
   JsArray(xs)
 
-fun pMember()
+fun parse-member()
   with scope("pmember")
-  val k = takeString().string
-  optional(pWhitespace)
-  pToken(":")
-  val v = pValue()
+  val k = parse-str().string
+  optional(parse-whitespace)
+  parse-token(":")
+  val v = parse-value()
   (k, v)
 
-fun pObject()
-  with scope("pobject")
-  pToken("{")
-  val members = separatedTrailing(pMember, {pToken(",")})
-  optional(pWhitespace)
+fun parse-object()
+  with scope("parse-object")
+  parse-token("{")
+  val members = parse-sep-trailing(parse-member, {parse-token(",")})
+  optional(parse-whitespace)
   val o = JsObject(LinearMap([]) + members)
-  pToken("}")
+  parse-token("}")
   o
 
-fun pValue(): <div,parse<string>> jsValue
+fun parse-value(): <div,parse<string>> jsValue
   with scope("pvalue")
-  val v = ors([pArray,pObject,pLit,pFloat,pInteger,pString])
-  optional(pWhitespace)
+  val v = ors([parse-array,parse-object,parse-literal,parse-float,parse-integer,parse-string])
+  optional(parse-whitespace)
   v
 
 val spacesRegex = r"^([ \n\t\r]|\/\/[^\n]+)+".regex()
-fun pWhitespace()
-  spacesRegex.takePattern()
+fun parse-whitespace()
+  spacesRegex.take-pattern()
 
-fun pToken(s: string)
+fun parse-token(s: string)
   text(s)
-  optional(pWhitespace)
+  optional(parse-whitespace)
 
 fun parse(s: string)
   s.println
-  match s.run(pValue)
+  match s.run(parse-value)
     Right(e) -> e.show.println
     Left(err) -> ("Error:\n" ++ err.show(s)).println
   

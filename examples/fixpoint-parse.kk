@@ -10,22 +10,22 @@ pub import fixpoint-parse-helper
 fun ruleid/pretty(a: ruleid): pure doc
   a.show.text
 
-fun pProgram(): parse<pvalue,sslice,e> string
+fun parse-program(): parse<pvalue,sslice,e> string
   with memo(RTop)
-  val res = pmany(RAnyChar, any/pchar)
+  val res = parse-many(RAnyChar, any/pchar)
   pEof()
   res.string
 
-fun pProgram2(): parse<pvalue,sslice,e> list<string>
+fun parse-program2(): parse<pvalue,sslice,e> list<string>
   with memo(RTop)
-  val res = pmany(RFun, {ptoken("fun")})
+  val res = parse-many(RFun, {parse-token("fun")})
   pEof()
   res
 
 fun main()
   val res = 
     with parse-cache("funfunfun".slice, RTop)
-    val res = pProgram2()
+    val res = parse-program2()
     trace(res.pretty.show)
     res
   res.pretty.show.println

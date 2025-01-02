@@ -7,11 +7,11 @@
 ----------------------------------------------------------------------------*/
 import std/core/undiv
 
-effect astError
-  final ctl astError(e: string): a
+effect ast-error
+  final ctl ast-error(e: string): a
 
 effect astParse<l>
-  fun addWarning(w: string): ()
+  fun add-warning(w: string): ()
   fun ppeek(): maybe<l>
   fun undelimit(msg: string): ()
   fun reset(msg: string): ()
@@ -19,23 +19,23 @@ effect astParse<l>
   fun progress-since(msg: string): bool 
   fun pnext(): maybe<l>
   fun peof(): ()
-  fun tookInput(msg: string): bool
+  fun took-input(msg: string): bool
   fun ptrace(s: string): ()
 
 fun progress(msg: string, f: () -> <ast<l>|e> a): <ast<l>|e> a
   if progress-since(msg) then
     match pmaybe(msg, f)
       Just(x) -> x
-      _ -> astError(msg ++ " did not consume input")
+      _ -> ast-error(msg ++ " did not consume input")
   else
-    astError(msg ++ " did not consume input")
+    ast-error(msg ++ " did not consume input")
 
-fun pdelimit(msg: string, f: () -> <ast<l>|e> a): <ast<l>|e> a
+fun parse-delimited(msg: string, f: () -> <ast<l>|e> a): <ast<l>|e> a
   delimit(msg)
   with override
-    final ctl astError(e) 
+    final ctl ast-error(e) 
       undelimit(msg)
-      astError("\nWhen parsing " ++ msg ++ " " ++ e)
+      ast-error("\nWhen parsing " ++ msg ++ " " ++ e)
   val x = f()
   undelimit(msg)
   x
@@ -44,28 +44,28 @@ fun peek(): ast<l> l
   val p = ppeek()
   match p
     Just(l) -> l
-    Nothing -> astError("unexpected end of file")
+    Nothing -> ast-error("unexpected end of file")
 
 fun next(): ast<l> l
   val p = pnext()
   match p
     Just(l) -> l
-    Nothing -> astError("unexpected end of file")
+    Nothing -> ast-error("unexpected end of file")
 
-alias ast<l> = <astParse<l>, astError, pure>
-fun lexParse(input: string, p: () -> <console,ast<l>|e> a, ?lex: (string) -> <console, pure, astError|e> list<l>, ?show: (l) -> pure string): <console,astError,pure|e> a
+alias ast<l> = <astParse<l>, ast-error, pure>
+fun lex-parse(input: string, p: () -> <console,ast<l>|e> a, ?lex: (string) -> <console, pure, ast-error|e> list<l>, ?show: (l) -> pure string): <console,ast-error,pure|e> a
   val lexes = lex(input)
-  parseLexemes(lexes, p)
+  parse-lexemes(lexes, p)
   
-fun parseLexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -> pure string): <console,astError,pure|e> a
+fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -> pure string): <console,ast-error,pure|e> a
   var lexemes := lexemes0
   var history := Cons((ctx _, "top", 0), Nil)
   val debug = True
   with override
-    final ctl astError(e: string)
-      astError("Got error: " ++ e ++ "\n" ++ " when parsing:\n\t" ++ lexemes.take(2).map(show).join("\n\t"))
+    final ctl ast-error(e: string)
+      ast-error("Got error: " ++ e ++ "\n" ++ " when parsing:\n\t" ++ lexemes.take(2).map(show).join("\n\t"))
   with handler
-    fun addWarning(w: string)
+    fun add-warning(w: string)
       ()
     fun pnext()
       match lexemes
@@ -76,7 +76,7 @@ fun parseLexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) ->
             Cons((h, msg, i), tl) ->
               history := Cons((h ++ ctx Cons(l, _), msg, i + 1), tl)
             Nil -> 
-              astError("unexpected top of context")
+              ast-error("unexpected top of context")
           Just(l)
         Nil -> Nothing
     fun reset(msg)
@@ -91,7 +91,7 @@ fun parseLexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) ->
             // if debug then
             //   trace("Resetting " ++ str ++ "\n" ++ history.map(fn(x) "\tWhen parsing " ++ x.snd).join("\n") ++ " at " ++ lexemes.head.map(show).default("eof") ++ "\nputting back:\n\t" ++ (h ++. Nil).map(show).join("\n\t"))
         Nil ->
-          astError("mismatched reset")
+          ast-error("mismatched reset")
     fun delimit(msg)
       // trace("Trying  " ++ history.take(10).reverse.map(snd).show ++ " " ++ msg)
       history := Cons((ctx _, msg, 0), history)
@@ -122,10 +122,10 @@ fun parseLexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) ->
         // trace("Parsing eof\n" ++ history.map(fn(x) "\tWhen parsing " ++ x.snd).join("\n") ++ "\n\nHad leftovers: " ++ lexemes.map(fn(x) x.show).join("\n"))
       match lexemes
         Cons(l, _) ->
-          astError("peof expected end of file" ++ l.show)
+          ast-error("peof expected end of file" ++ l.show)
         Nil ->
           ()
-    fun tookInput(str)
+    fun took-input(str)
       match history
         Cons((_, msg, i), _) ->
           if str != msg then
@@ -141,32 +141,32 @@ fun parseLexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) ->
   mask<local>{p()}
 
 
-fun pmany(kind: string, l: () -> <ast<t>|e> a): <ast<t>|e> list<a>
+fun parse-many(kind: string, l: () -> <ast<t>|e> a): <ast<t>|e> list<a>
   match poption("many " ++ kind, l)
-    Just(r) -> Cons(r, pmany(kind, l.pretend-decreasing))
+    Just(r) -> Cons(r, parse-many(kind, l.pretend-decreasing))
     Nothing -> Nil
 
-fun pmany1(kind: string, l: () -> <ast<l>|e> a): <ast<l>|e> list<a>
+fun parse-many1(kind: string, l: () -> <ast<l>|e> a): <ast<l>|e> list<a>
   match poption("many " ++ kind, l)
-    Just(r) -> Cons(r, pmany(kind, l.pretend-decreasing))
-    Nothing -> astError("at least 1 of " ++ kind)
+    Just(r) -> Cons(r, parse-many(kind, l.pretend-decreasing))
+    Nothing -> ast-error("at least 1 of " ++ kind)
 
-fun pmanyend(kind: string, l: () -> <ast<l>|e> a, p: () -> <ast<l>|e> b): <ast<l>|e> list<a>
+fun parse-many-end(kind: string, l: () -> <ast<l>|e> a, p: () -> <ast<l>|e> b): <ast<l>|e> list<a>
   match poption("many " ++ kind, l)
     Just(r) -> 
       match poption("sep " ++ kind, p)
-        Just(_) -> Cons(r, pmanyend(kind, l.pretend-decreasing, p.pretend-decreasing))
+        Just(_) -> Cons(r, parse-many-end(kind, l.pretend-decreasing, p.pretend-decreasing))
         Nothing -> Cons(r, Nil)
     Nothing -> Nil
 
-fun pmanyend1(kind: string, l: () -> <ast<l>|e> a, p: () -> <ast<l>|e> b): <ast<l>|e> list<a>
+fun parse-many-end1(kind: string, l: () -> <ast<l>|e> a, p: () -> <ast<l>|e> b): <ast<l>|e> list<a>
   match poption("many " ++ kind, l)
     Just(r) -> 
       match poption("sep " ++ kind, p)
-        Just(_) -> Cons(r, pmanyend(kind, l.pretend-decreasing, p.pretend-decreasing))
+        Just(_) -> Cons(r, parse-many-end(kind, l.pretend-decreasing, p.pretend-decreasing))
 
 // Parse a token
-fun ptoken(msg: string, f: (l) -> <ast<l>|e> maybe<a>, ?show: (l) -> pure string): <ast<l>|e> a
+fun parse-token(msg: string, f: (l) -> <ast<l>|e> maybe<a>, ?show: (l) -> pure string): <ast<l>|e> a
   val t = peek()
   match f(t) 
     Just(a) -> 
@@ -174,7 +174,7 @@ fun ptoken(msg: string, f: (l) -> <ast<l>|e> maybe<a>, ?show: (l) -> pure string
       // ptrace("Consuming " ++ t.show)
       a
     Nothing ->
-      astError("expecting " ++ msg)
+      ast-error("expecting " ++ msg)
 
 // Version of maybe that does backtrack
 fun pmaybe(str: string, p: () -> <ast<l>|e> a): <ast<l>|e> maybe<a>
@@ -183,7 +183,7 @@ fun pmaybe(str: string, p: () -> <ast<l>|e> a): <ast<l>|e> maybe<a>
     return(r)
       undelimit(str)
       Just(r)
-    final ctl astError(e) 
+    final ctl ast-error(e) 
       reset(str)
       Nothing
   p()
@@ -200,36 +200,36 @@ fun try(str: string, p: () -> <ast<l>|e> a): <ast<l>|e> a
     return(r) 
       undelimit(str)
       r
-    final ctl astError(e) 
+    final ctl ast-error(e) 
       reset(str)
-      astError(e)
+      ast-error(e)
   p()
 
 // Version of maybe that doesn't backtrack
 fun poption(str: string, p: () -> <ast<l>|e> a): <ast<l>|e> maybe<a>
-  with pdelimit(str)
+  with parse-delimited(str)
   with override
     return(r)
       Just(r)
-    final ctl astError(e)
-      if tookInput(str) then
-        astError(e)
+    final ctl ast-error(e)
+      if took-input(str) then
+        ast-error(e)
       else
         Nothing 
   p()
 
-fun pchoicesnb(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
-  with pdelimit(str)
+fun pparse-choices-nb(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
+  with parse-delimited(str)
   fun find(ps': list<() -> <ast<l>|e> a>): <ast<l>|e> a
     match ps'
       Cons(p, rst) -> 
         match poption(str, p)
           Just(r) -> r
           Nothing -> find(rst)
-      Nil -> astError("expected " ++ str)
+      Nil -> ast-error("expected " ++ str)
   find(ps)
 
-fun pchoices(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
+fun pparse-choices(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
   try(str)
     fun find(ps': list<() -> <ast<l>|e> a>): <ast<l>|e> a
       match ps'
@@ -237,11 +237,11 @@ fun pchoices(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
           match pmaybe(str, p)
             Just(r) -> r
             Nothing -> find(rst)
-        Nil -> astError("expected " ++ str)
+        Nil -> ast-error("expected " ++ str)
     find(ps)
 
-fun parse-error(e: string): astError a
-  astError("invalid syntax" ++ e.list.drop-while(fn(x) x != ':').string)
+fun parse-error(e: string): ast-error a
+  ast-error("invalid syntax" ++ e.list.drop-while(fn(x) x != ':').string)
 
 fun p-braced(pL, pR, p)
   pL()
@@ -249,8 +249,8 @@ fun p-braced(pL, pR, p)
   pR()
   x
 
-val p-sep-by = pmanyend
-val p-sep-by1 = pmanyend1
+val p-sep-by = parse-many-end
+val p-sep-by1 = parse-many-end1
 
-fun unimplemented(): astError a
-  astError("unimplemented")
+fun unimplemented(): ast-error a
+  ast-error("unimplemented")

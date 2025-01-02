@@ -7,42 +7,42 @@ import std/data/linearmap
 import std/data/json
 import json-fixpoint
 
-fun pstringchars(): parse<pvalue,sslice,<>> string
-  pmanychar(RAnyChar, fn(c) c != '"')
+fun parse-stringchars(): parse<pvalue,sslice,<>> string
+  parse-manychar(RAnyChar, fn(c) c != '"')
 
-fun pstring(): parse<pvalue,sslice,<>> string
+fun parse-string(): parse<pvalue,sslice,<>> string
   with memo(RString)
-  pbracketed(RChar('"'), pdquote, RChar('"'), pdquote, RString, pstringchars)
+  pbracketed(RChar('"'), pdquote, RChar('"'), pdquote, RString, parse-stringchars)
 
-fun pnull(): parse<pvalue,sslice,<>> json
+fun parse-null(): parse<pvalue,sslice,<>> json
   with memo(RNull)
-  ptoken("null")
+  parse-token("null")
   JSNull
 
-fun pbool(): parse<pvalue,sslice,<>> json
+fun parse-bool(): parse<pvalue,sslice,<>> json
   with memo(RBool)
-  choices([{ptoken("true"); JSBool(True)}, {ptoken("false"); JSBool(False)}])
+  parse-choices([{parse-token("true"); JSBool(True)}, {parse-token("false"); JSBool(False)}])
 
 fun pjson(): parse<pvalue,sslice,<>> json
   with memo(RJson)
-  choices([pobj, parray, pbool, pnull, {JSInt(pint())}, {JSString(pstring())}])
+  parse-choices([pobj, parse-array, parse-bool, parse-null, {JSInt(pint())}, {JSString(parse-string())}])
 
 fun plist(): parse<pvalue,sslice,<>> list<json>
-  psepby(RChar(','), pcomma, RJson, pjson)
+  parse-sep-by(RChar(','), parse-comma, RJson, pjson)
 
-fun parray(): parse<pvalue,sslice,<>> json
+fun parse-array(): parse<pvalue,sslice,<>> json
   with memo(RArray)
   val vals:list<json> = pbracketed(RChar('['), popenbracket, RChar(']'), pclosebracket, RArray, plist)
   JSList(vals)
 
 fun pfield(): parse<pvalue,sslice,<>> (string,json)
-  val key = pstring()
-  pcolon()
+  val key = parse-string()
+  parse-colon()
   val value = pjson()
   (key, value)
 
 fun pfields(): parse<pvalue,sslice,<>> list<(string,json)>
-  psepby(RChar(','), pcomma, RKeyValue, pfield) 
+  parse-sep-by(RChar(','), parse-comma, RKeyValue, pfield) 
 
 fun pobj(): parse<pvalue,sslice,<>> json
   with memo(RObj)

@@ -13,7 +13,7 @@ fun pexpr(prec: int): parse<pvalue,sslice,<>> pvalue
 
 fun pexprr(prec: int, left: pvalue): parse<pvalue,sslice,<>> pvalue
   with memo(RRExpr(prec, left))
-  choices([
+  parse-choices([
     associate(prec, AssociateRight, 3, left, {pchar('^').string}), 
     associate(prec, AssociateLeft, 2, left, {pchar('/').string}), 
     associate(prec, AssociateLeft, 2, left, {pchar('*').string}),  

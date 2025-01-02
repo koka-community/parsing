@@ -113,24 +113,24 @@ fun tokenizer(p)
 val stringRegex = "^\"[^\"]*\"".regex()
 fun parseString()
   with tokenizer
-  val x = takePattern(stringRegex)
+  val x = take-pattern(stringRegex)
   SString(x.subslice(1, x.count() - 1).string)
 
 val charRegex = r"^#\\[^\r\n\t\) ]+".regex()
 fun parseChar()
   with tokenizer
-  val x = takePattern(charRegex)
+  val x = take-pattern(charRegex)
   SChar(x.advance(2).string)
 
 val symbolRegex = "^([^.#; \\]\\t\\r\\n()',`\"][^; \\]\\t\\r\\n()',`\"]*|[.][^; \\t\\r\\n()',`\"\\]]+)".regex()
 fun parseSymbol()
   with tokenizer
-  SName(takePattern(symbolRegex).string)
+  SName(take-pattern(symbolRegex).string)
 
 val boolRegex = r"^#[ftFT]".regex();
 fun parseBool()
   with tokenizer
-  val v = takePattern(boolRegex)
+  val v = take-pattern(boolRegex)
   SBool("#t" == v.string || "#T" == v.string)
 
 fun parseNum()
@@ -140,20 +140,20 @@ fun parseNum()
 
 val commentRegex = r"^;[^\n]*".regex()
 fun parseComment()
-  takePattern(commentRegex)
+  take-pattern(commentRegex)
 
 val openListRegex = r"^[([{]".regex()
 val closeListRegex = r"^[)\]}]".regex()
 val whitespace = r"^[\n\r\t ]+".regex()
 
 fun parseWhitespace()
-  many1({(fn() takePattern(whitespace)).or(parseComment)})
+  many1({(fn() take-pattern(whitespace)).or(parseComment)})
 
 fun parseOpenList()
-  takePattern(openListRegex)
+  take-pattern(openListRegex)
 
 fun parseCloseList()
-  takePattern(closeListRegex)
+  take-pattern(closeListRegex)
 
 fun parseCells()
   optional(parseWhitespace)

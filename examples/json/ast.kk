@@ -6,64 +6,64 @@ import std/data/linearmap
 import std/num/float64
 import std/pretty/pprint
 
-fun pWhite()
-  pmany("Whitespace")
-    ptoken("Whitespace Char") fn(t)
+fun parse-whitespace()
+  parse-many("Whitespace")
+    parse-token("Whitespace Char") fn(t)
       match t
         JSWhite -> Just(())
         _ -> Nothing
 
-fun trailingWhite(f: () -> ast<jslex> a): ast<jslex> a
+fun parse-trailing-whitespace(f: () -> ast<jslex> a): ast<jslex> a
   val x = f()
-  pWhite()
+  parse-whitespace()
   x
 
-fun pJsonValue()
-  trailingWhite
-    pchoices("JSValue", [pArray, pObject, pNull, pBool, pNum, pString])
+fun parse-json-value()
+  parse-trailing-whitespace
+    parse-choices("JSValue", [parse-array, parse-object, parse-null, parse-bool, parse-number, parse-string])
 
 fun is-token(nm: string, b: (jslex) -> bool): ast<jslex> jslex
-  trailingWhite 
-    ptoken(nm) fn(t: jslex)
+  parse-trailing-whitespace 
+    parse-token(nm) fn(t: jslex)
       if t.b then Just(t) else Nothing
 
 fun map-token(nm: string, b: (jslex) -> bool, m: (jslex) -> pure a): ast<jslex> a
-  trailingWhite
-    ptoken(nm) fn(t)
+  parse-trailing-whitespace
+    parse-token(nm) fn(t)
       if t.b then Just(m(t)) else Nothing
 
-fun pNull()
+fun parse-null()
   with _ <- map-token("Null", json-parse/is-jsnull)
   json/JSNull
 
-fun pBool()
+fun parse-bool()
   with b <- map-token("Bool", fn(t) t.is-jstrue || t.is-jsfalse)
   match b
     JSTrue -> JSBool(True)
     JSFalse -> JSBool(False)
 
-fun pAOpen()
+fun parse-array-open()
   is-token("List start", is-jsarrayOpen)
 
-fun pAClose()
+fun parse-array-close()
   is-token("List end", is-jsarrayClose)
 
-fun pOOpen()
+fun parse-object-open()
   is-token("Object start", is-jsobjOpen)
 
-fun pOClose()
+fun parse-object-close()
   is-token("Object end", is-jsobjClose)
 
-fun pComma()
+fun parse-comma()
   is-token(",", is-jsvalueSep)
 
-fun pColon()
+fun parse-colon()
   is-token(":", is-jsobjColon)
 
-fun pStr()
+fun parse-str()
   map-token("string", is-jsstr, fn(JSStr(s)) s.string)
 
-fun pNum()
+fun parse-number()
   with n <- map-token("num", json-parse/is-jsnum)
   val json-parse/JSNum(s) = n
   val s' = s.string
@@ -74,28 +74,28 @@ fun pNum()
         Just(f) -> json/JSNum(f)
         _ -> throw("Invalid int " ++ s')
 
-fun pString()
-  JSString(pStr())
+fun parse-string()
+  JSString(parse-str())
 
-fun pArray()
-  trailingWhite
-    p-braced(pAOpen, pAClose)
-      JSList(p-sep-by("Array Entry", pJsonValue, pComma))
+fun parse-array()
+  parse-trailing-whitespace
+    p-braced(parse-array-open, parse-array-close)
+      JSList(p-sep-by("Array Entry", parse-json-value, parse-comma))
 
-fun pObject()
-  trailingWhite
-    p-braced(pOOpen, pOClose) 
-      JSObj(p-sep-by("Obj Entry", pObjEntry, pComma))
+fun parse-object()
+  parse-trailing-whitespace
+    p-braced(parse-object-open, parse-object-close) 
+      JSObj(p-sep-by("Obj Entry", parse-object-entry, parse-comma))
 
-fun pObjEntry()
-  val nm = pStr()
-  pColon()
-  (nm, pJsonValue())
+fun parse-object-entry()
+  val nm = parse-string()
+  parse-colon()
+  (nm, parse-json-value())
 
 fun json/parse(s: string): <console,pure> json
-  with final ctl astError(e)
+  with final ctl ast-error(e)
     e.throw
-  lexParse(s, pJsonValue, ?lex=lex)
+  lex-parse(s, parse-json-value, ?lex=lex)
 
 fun lex(s: string): pure list<jslex>
   with val alextrace = False

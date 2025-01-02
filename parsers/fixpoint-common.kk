@@ -4,14 +4,14 @@ import std/core-extras
 
 // Combinators
 // A repeat combinator that requires a non-empty list of values parsed by `p`
-fun pmany1(rid: ruleid, p: parser<v,t,a,e>, ?inj: (list<a>) -> pure v, ?extract: (v) -> pure list<a>): parse<v,t,e> list<a>
+fun parse-many1(rid: ruleid, p: parser<v,t,a,e>, ?inj: (list<a>) -> pure v, ?extract: (v) -> pure list<a>): parse<v,t,e> list<a>
   with memo(RMany(rid, True))
-  Cons(p(), choices([{pmany1(rid, p)}, {[]}]))
+  Cons(p(), parse-choices([{parse-many1(rid, p)}, {[]}]))
 
 // A repeat combinator that requires a list of values parsed by `p` (may be empty)
-fun pmany(rid: ruleid, p: parser<v,t,a,e>, ?inj: (list<a>) -> pure v, ?extract: (v) -> pure list<a>): parse<v,t,e> list<a>
+fun parse-many(rid: ruleid, p: parser<v,t,a,e>, ?inj: (list<a>) -> pure v, ?extract: (v) -> pure list<a>): parse<v,t,e> list<a>
   with memo(RMany(rid, False))
-  choices([{val first = p(); val res = pmany(rid, p); Cons(first, res)}, {[]}])
+  parse-choices([{val first = p(); val res = parse-many(rid, p); Cons(first, res)}, {[]}])
 
 // A combinator that parses a bracketed expression with `p` as the content parser, and `popen` and `pclose` as the bracketing parsers
 fun pbracketed<a,b,c,e>(openid: ruleid,  popen: parser<v,t,b,e>, closeid: ruleid, pclose: parser<v,t,c,e>, pid: ruleid, p: parser<v,t,a,e>
@@ -25,39 +25,39 @@ fun pbracketed<a,b,c,e>(openid: ruleid,  popen: parser<v,t,b,e>, closeid: ruleid
   e
 
 // A combinator that parses a sequence of `p` separated by `psep` with optional trailing separator if `allowTrailing` is true
-fun psepby(sepid: ruleid, psep: parser<v,t,b,e>, rid: ruleid, p: parser<v,t,a,e>, allowTrailing: bool=True, 
+fun parse-sep-by(sepid: ruleid, psep: parser<v,t,b,e>, rid: ruleid, p: parser<v,t,a,e>, allowTrailing: bool=True, 
           ?a/inj: (a) -> pure v, ?a/extract: (v) -> pure a, 
           ?la/inj: (list<a>) -> pure v, ?la/extract: (v) -> pure list<a>, 
           ?mla/inj: (maybe<list<a>>) -> pure v, ?mla/extract: (v) -> pure maybe<list<a>>, 
           ?b/inj: (b) -> pure v, ?b/extract: (v) -> pure b,
           ?bm/inj: (maybe<b>) -> pure v, ?bm/extract: (v) -> pure maybe<b>): parse<v,t,e> list<a>
   with memo(RSepBy(rid, sepid, allowTrailing))
-  val res = pmaybe(rid)
+  val res = parse-maybe(rid)
     val first = p()
-    val rest = pmany(RPrecededBy(rid, sepid), {psep(); p()})
+    val rest = parse-many(RPrecededBy(rid, sepid), {psep(); p()})
     match rest
       [] -> Cons(first, Nil)
       rest' -> 
         if (allowTrailing) then 
-          pmaybe(sepid, psep)
+          parse-maybe(sepid, psep)
           ()
         Cons(first, rest')
   res.default([])
 
 // A combinator that succeeds with `()` when `p` fails
-fun pnot(rid: ruleid, p: parser<v,t,a,e>, ?a/inj: (a) -> pure v, ?a/extract: (v) -> pure a, 
+fun parse-not(rid: ruleid, p: parser<v,t,a,e>, ?a/inj: (a) -> pure v, ?a/extract: (v) -> pure a, 
                                           ?u/inj: (()) -> pure v, ?u/extract: (v) -> pure ()): parse<v,t,e> ()
   with memo(RNot(rid))
-  choices([{p(); none()}, {()}])
+  parse-choices([{p(); none()}, {()}])
 
 // A combinator that succeeds with `Just` when `p` succeeds, and `Nothing` when `p` fails
-fun pmaybe(rid: ruleid, p: parser<v,t,a,e>, ?inj: maybe<a> -> pure v, ?extract: v -> pure maybe<a>): parse<v,t,e> maybe<a>
+fun parse-maybe(rid: ruleid, p: parser<v,t,a,e>, ?inj: maybe<a> -> pure v, ?extract: v -> pure maybe<a>): parse<v,t,e> maybe<a>
   with memo(RMaybe(rid))
-  choices([{Just(p())}, {Nothing}])
+  parse-choices([{Just(p())}, {Nothing}])
 
 // Other common primitives (specialized to parsing string slices)
 // A combinator that parses a sequence of characters that satisfy the predicate `pred`
-fun pmanychar(nm: ruleid, pred: (char) -> bool): parse<pvalue,sslice,<>> string
+fun parse-manychar(nm: ruleid, pred: (char) -> bool): parse<pvalue,sslice,<>> string
   with memo(RChars(nm))
   val orig = get-slice()
   var start := False
@@ -82,7 +82,7 @@ fun pmanychar(nm: ruleid, pred: (char) -> bool): parse<pvalue,sslice,<>> string
   p(orig, orig.truncate)
 
 // A combinator that parses a string matching `s` (though typically for keywords you want a whitespace or other token separator after this)
-fun ptoken(s: string): parse<pvalue,sslice,<>> string
+fun parse-token(s: string): parse<pvalue,sslice,<>> string
   with memo(RToken(s))
   val orig = get-slice()
   fun p(m: sslice, r: sslice)
@@ -112,7 +112,7 @@ fun match/pchar(c: char): parse<pvalue,sslice,<>> char
 
 // A combinator that matches a character that satisfies the predicate `pred` and returns that character.
 // Note:
-//   For many characters prefer `pmanychar` instead of combining this with `pmany` which would create memoization and backtracking points for each character
+//   For many characters prefer `parse-manychar` instead of combining this with `parse-many` which would create memoization and backtracking points for each character
 fun pred/pchar(rid: ruleid, pred: (char) -> bool): parse<pvalue,sslice,<>> char
   with memo(rid)
   match get-slice().next()
@@ -156,7 +156,7 @@ fun pid(sid: ruleid=RAlpha, rid: ruleid=RAlphaNum, is-start: (char) -> bool=is-a
 // For example, 1+2 is 1 plus 2, but 1 +2 is 1 followed by the number +2.
 fun pint(): parse<pvalue,sslice,<>> int
   with memo(RInt)
-  val neg = each([{ptoken(" -")}, {ptoken(" +")}, {"+"}]).trim() == "-"
+  val neg = each([{parse-token(" -")}, {parse-token(" +")}, {"+"}]).trim() == "-"
   var start := False
   fun p(m: sslice, acc: sslice)
     match m.next()
@@ -203,15 +203,15 @@ fun peof(): parse<pvalue,sslice,<>> pvalue
 
 // Parses many spaces (tabs and spaces) not including newlines
 fun pspaces(): parse<pvalue,sslice,<>> string
-  pmanychar(RWhite, fn(i) i.is-space)
+  parse-manychar(RWhite, fn(i) i.is-space)
 
 // Parses an optional sequence of spaces
 fun pmspaces()
-  pmaybe(RChars(RWhite), fn() pspaces())
+  parse-maybe(RChars(RWhite), fn() pspaces())
 
 // Parses a token followed by optional spaces
-fun ptokenw(s: string)
-  val t = ptoken(s)
+fun parse-tokenw(s: string)
+  val t = parse-token(s)
   pmspaces()
   t
 
@@ -255,10 +255,10 @@ fun pdquote()
 fun psquote()
   pchar('\'')
 
-fun pcomma()
+fun parse-comma()
   pchar(',')
 
-fun pcolon()
+fun parse-colon()
   pchar(':')
 
 fun psemi()
@@ -279,7 +279,7 @@ fun pplus()
 fun pbacktick()
   pchar('`')
 
-fun pbar()
+fun parse-vertical-bar()
   pchar('|')
 
 fun pbackslash()
@@ -322,7 +322,7 @@ fun punderscore()
   pchar('_')
 
 fun parrow()
-  ptoken("->")
+  parse-token("->")
 
 fun palpha()
   pchar(RAlpha, is-alpha)
