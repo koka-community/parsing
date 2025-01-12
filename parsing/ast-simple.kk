@@ -218,7 +218,7 @@ fun poption(str: string, p: () -> <ast<l>|e> a): <ast<l>|e> maybe<a>
         Nothing 
   p()
 
-fun pparse-choices-nb(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
+fun parse-choices-nb(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
   with parse-delimited(str)
   fun find(ps': list<() -> <ast<l>|e> a>): <ast<l>|e> a
     match ps'
@@ -229,7 +229,7 @@ fun pparse-choices-nb(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
       Nil -> ast-error("expected " ++ str)
   find(ps)
 
-fun pparse-choices(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
+fun parse-choices(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
   try(str)
     fun find(ps': list<() -> <ast<l>|e> a>): <ast<l>|e> a
       match ps'

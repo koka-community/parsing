@@ -53,15 +53,15 @@ $cont         = [\x80-\xBF]
 -----------------------------------------------------------
 @digits       = $digit+
 @exponent     = $exp $sign? @digits
-@fraction     = '.' @digits
+@fraction     = \. @digits
 @integer      = $sign $digit
               | $sign $onenine @digits
               | $digit
               | $onenine @digits
 
 @number       = @integer @fraction? @exponent?
-@escape       = \" | '\\' | '\/' | 'b' | 'f' | 'n' | 'r' | 't' | 'u' $hex $hex $hex $hex
-@character    = [\x0020 - \x10FFFF] # [\"\\] | '\\' @escape
+@escape       = \" | \\ | \/ | b | f | n | r | t | (u $hex $hex $hex $hex)
+@character    = ([\x0020 - \x10FFFF] # [\"\\]) | \\ @escape
 @string       = \" @character* \"
 @newline      = $return?$linefeed
 @utf8valid    = [\xC2-\xDF] $cont

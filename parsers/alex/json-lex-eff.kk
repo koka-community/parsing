@@ -92,7 +92,7 @@ effect alex
   fun set-accept(s: int): () // Sets the latest potential accepting state, while still seeking for states that accept more input
   fun recognize-token(): alexAccRes // Recognizes that the last accepting state is the longest accepting token, and prepares to start the next token
   fun action-info(): action-info // Get the info about the last token recognized (start, end, and slice) for the action
-
+ 
 pub value struct alex-pos
   offset: int
   column: int
@@ -164,7 +164,7 @@ fun alex-consume-char(a: alexScanState)
   match a
     AlexScanState(states, seek, current, acc, prev, curr, start, end, last-accept, action-info) ->
       AlexScanState(states, seek, current, acc.extend(1), prev, curr, start, end.pos-move(curr), last-accept, action-info)
-      
+
 pub value struct alex-next
   s: alexScanState
   c: char

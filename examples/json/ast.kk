@@ -1,10 +1,25 @@
-import alex
-import parsers/alex/json-parse
+import parsers/alex/json-lex
 import parsing/ast-simple
 import std/data/json
 import std/data/linearmap
 import std/num/float64
 import std/pretty/pprint
+
+fun lex/show(t: jslex): string
+  match t
+    JSStr(s) -> "JSStr(" ++ s.string ++ ")"
+    json-lex/JSNum(s) -> "JSNum(" ++ s.string ++ ")"
+    JSComment(s) -> "JSComment(" ++ s.string ++ ")"
+    JSTrue -> "JSTrue"
+    JSFalse -> "JSFalse"
+    json-lex/JSNull -> "JSNull"
+    JSObjOpen -> "JSObjOpen"
+    JSObjColon -> "JSObjColon"
+    JSObjClose -> "JSObjClose"
+    JSArrayOpen -> "JSArrayOpen"
+    JSArrayClose -> "JSArrayClose"
+    JSValueSep -> "JSValueSep"
+    JSWhite -> "JSWhite"
 
 fun parse-whitespace()
   parse-many("Whitespace")
@@ -33,7 +48,7 @@ fun map-token(nm: string, b: (jslex) -> bool, m: (jslex) -> pure a): ast<jslex> 
       if t.b then Just(m(t)) else Nothing
 
 fun parse-null()
-  with _ <- map-token("Null", json-parse/is-jsnull)
+  with _ <- map-token("Null", is-jsnull)
   json/JSNull
 
 fun parse-bool()
@@ -64,8 +79,8 @@ fun parse-str()
   map-token("string", is-jsstr, fn(JSStr(s)) s.string)
 
 fun parse-number()
-  with n <- map-token("num", json-parse/is-jsnum)
-  val json-parse/JSNum(s) = n
+  with n <- map-token("num", json-lex/is-jsnum)
+  val json-lex/JSNum(s) = n
   val s' = s.string
   match parse-int(s') 
     Just(i) -> JSInt(i)
@@ -88,7 +103,7 @@ fun parse-object()
       JSObj(p-sep-by("Obj Entry", parse-object-entry, parse-comma))
 
 fun parse-object-entry()
-  val nm = parse-string()
+  val nm = parse-str()
   parse-colon()
   (nm, parse-json-value())
 
@@ -98,10 +113,9 @@ fun json/parse(s: string): <console,pure> json
   lex-parse(s, parse-json-value, ?lex=lex)
 
 fun lex(s: string): pure list<jslex>
-  with val alextrace = False
   lex-recur(s.slice)
 
-fun lex-recur(s: sslice): <alextrace,pure> list<jslex>
+fun lex-recur(s: sslice): <pure> list<jslex>
   match s.alexScan(0)
     AlexToken(s',len,p) ->
       Cons(p(s.subslice(0, len)), lex-recur(s'))

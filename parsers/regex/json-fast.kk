@@ -3,10 +3,10 @@ import std/text/regex
 import parsing/regex-parser
 import std/num/float64
 
-val leadingHexDotRegex = r"[+-]?0[xX]\.[0-9a-fA-F_]+([eEpP][+-]?[0-9a-fA-F_]+)?".regex() 
-val wholeHexFloatRegex = r"[+-]?0[xX][0-9a-fA-F_]+(\.[0-9a-fA-F_]+)?([eEpP][+-]?[0-9a-fA-F_]+)?".regex() 
-val integerRegex = r"[+-]?[0-9]+".regex() 
-fun parse-int()
+val leadingHexDotRegex = r"^[+-]?0[xX]\.[0-9a-fA-F_]+([eEpP][+-]?[0-9a-fA-F_]+)?".regex() 
+val wholeHexFloatRegex = r"^[+-]?0[xX][0-9a-fA-F_]+(\.[0-9a-fA-F_]+)?([eEpP][+-]?[0-9a-fA-F_]+)?".regex() 
+val integerRegex = r"^[+-]?[0-9]+".regex() 
+fun parse-intv()
   take-pattern(integerRegex)
 
 fun parse-exp()
@@ -30,12 +30,12 @@ fun parse-float()
   JSNum(d.parse-float64.unjust)
 
 fun parse-integer()
-  val d = parse-int().string.split("_").join
+  val d = parse-intv().string.split("_").join
   optional(parse-whitespace)
   // trace(d)
   JSInt(d.parse-int.unjust)
 
-val stringRegex = r#""[^\\\"]*(?:\\.[^"\\]*)*""#.regex()
+val stringRegex = r#"^"[^\\\"]*(?:\\.[^"\\]*)*""#.regex()
 
 inline fun parse-str()
   val s = take-pattern(stringRegex)
@@ -72,7 +72,7 @@ fun parse-object()
 fun parse-value(): <div,exn,parse<string>> json
   ors([parse-array,parse-object,parse-string,parse-float,parse-integer,parse-literal])
 
-val spacesRegex = r"([ \n\t\r]|\/\/[^\n]+)+".regex()
+val spacesRegex = r"^([ \n\t\r]|\/\/[^\n]+)+".regex()
 fun parse-whitespace()
   spacesRegex.take-pattern()
 
