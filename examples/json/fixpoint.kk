@@ -56,5 +56,6 @@ fun ptop(): parse<pvalue,sslice,<>> json
   res
 
 // TODO: Need to remove whitespace between tokens (not between "", and need manychar with escape character)
+// TODO: Need to fix to use order2
 fun main(): <pure,console> ()
-  parse(r#"{"a":["b",true,false,null,{"c":[],"d":123}]}"#.slice, RTop, ptop).pretty.show.println
+  fixpoint/parse(r#"{"a":["b",true,false,null,{"c":[],"d":123}]}"#.slice, RTop, ptop).pretty.show.println
