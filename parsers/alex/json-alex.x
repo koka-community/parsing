@@ -43,10 +43,11 @@ $ws           = [\ \t\n\r]
 $hex          = [0-9a-fA-F]
 $space        = [\ ]
 $tab          = [\t]
-$return       = \r
-$linefeed     = \n
-$graphic      = [\x21-\x7E]
-$cont         = [\x80-\xBF]
+$graphic      = [\x0020 - \x10FFFF] # [\r\n]
+$whitespace   = [\x09\x0A\x0B\x0C\x0D\x20\x85\xA0\x1680\x2000-\x200A\x2028\x2029\x202F\x205F\x3000]
+$return       = [\x0A\x0B\x0C\x0D\x85\x2028\x2029]
+$whitespacenoreturn = $whitespace # $return
+$graphicnoreturn = $graphic # $return
 
 -----------------------------------------------------------
 -- Regular expressions
@@ -62,27 +63,15 @@ $cont         = [\x80-\xBF]
 @number       = @integer @fraction? @exponent?
 @escape       = \" | \\ | \/ | b | f | n | r | t | (u $hex $hex $hex $hex)
 @character    = ([\x0020 - \x10FFFF] # [\"\\]) | \\ @escape
-@string       = \" @character* \"
-@newline      = $return?$linefeed
-@utf8valid    = [\xC2-\xDF] $cont
-              | \xE0 [\xA0-\xBF] $cont
-              | [\xE1-\xEC] $cont $cont
-              | \xED [\x80-\x9F] $cont
-              | [\xEE-\xEF] $cont $cont
-              | \xF0 [\x90-\xBF] $cont $cont
-              | [\xF1-\xF3] $cont $cont $cont
-              | \xF4 [\x80-\x8F] $cont $cont
-@utf8         = @utf8valid
-@commentchar  = ([$graphic$space$tab] # [\/\*])|@newline|@utf8
-@whitespace   = [$space$tab]+|@newline
-@linechar     = [$graphic$space$tab]|@utf8
+@newlines     = $return*
+@linechar     = $graphicnoreturn
 -----------------------------------------------------------
 -- Main tokenizer
 -----------------------------------------------------------
 program :-
 -- white space
-<0> "//" @linechar* @newline   { fn(s:sslice) JSComment(s.advance(2)) }
-<0> @whitespace           { fn(s:sslice) JSWhite }
+<0> "//" @linechar* @newlines   { fn(s:sslice) JSComment(s.advance(2)) }
+<0> $whitespace           { fn(s:sslice) JSWhite }
 <0> @number               { fn(s:sslice) JSNum(s) }
 <0> "true"                 { fn(s:sslice) JSTrue }
 <0> "false"                { fn(s:sslice) JSFalse }
@@ -93,7 +82,7 @@ program :-
 <0> ":"            { fn(s:sslice) JSObjColon }
 <0> "["            { fn(s:sslice) JSArrayOpen }
 <0> "]"           { fn(s:sslice) JSArrayClose }
-<0> @string               { fn(s:sslice) JSStr(s.advance(1).extend(-2)) }
+<0> \" @character* \"  { fn(s:sslice) JSStr(s.advance(1).extend(-2)) }
 
 {
 }

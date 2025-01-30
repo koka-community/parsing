@@ -1,7 +1,9 @@
 import parsers/alex/json-lex
 import std/data/json
 import std/num/float64
-import std/pretty/pprint
+// import std/pretty/pprint
+import std/os/file
+import std/os/path
 
 type parse-state
   PList(l: ctx<list<json>>, ps': parse-state)
@@ -44,9 +46,10 @@ fun add-num(st: parse-state, s: sslice): exn parse-state
         Just(f) -> st.add-value(json/JSNum(f))
         _ -> throw("Invalid int " ++ s')
 
-fun recur/parse(st: parse-state, s: sslice): pure json
+fun recur/parse(st: parse-state, s: sslice): <pure,index> json
   match s.alexScan(0)
     AlexToken(s',len,p) ->
+      // inc-index(len)
       match p(s.subslice(0, len))
         JSWhite -> parse(st, s')
         JSComment -> parse(st, s')
@@ -77,7 +80,15 @@ fun recur/parse(st: parse-state, s: sslice): pure json
     AlexError(m) ->
       throw("Alex error:\n" ++ m.string)
 
+// effect index
+//   fun inc-index(i: int): ()
+
 fun json/parse(s: string): pure json
+  // var index := 0
+  // with handler
+  //   fun inc-index(len)
+  //     trace("Index: " ++ index.show)
+  //     index := index + len
   recur/parse(Done(Nothing), s.slice)
 
 fun main()
@@ -93,4 +104,8 @@ fun main()
     ], // Trailing comma
     // something here 
    }"#
-  s.parse.pretty.show.println
+  s.pretty.show.println
+  // for(1) fn(i)
+  //   val s = read-text-file("/Users/timwhiting/rows3.json".path)
+  //   s.parse
+  //   println("Done")
