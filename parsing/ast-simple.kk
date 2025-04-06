@@ -138,7 +138,7 @@ fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -
     fun ptrace(s: string)
       if debug then
         trace(s ++ "\n  " ++ history.map(fn(x) "When parsing " ++ x.snd).join("\n\t") ++ " next token: " ++ lexemes.take(1).map(show).join(","))
-  mask<local>{p()}
+  p()
 
 
 fun parse-many(kind: string, l: () -> <ast<t>|e> a): <ast<t>|e> list<a>
