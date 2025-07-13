@@ -1,7 +1,7 @@
 import parsers/alex/json-lex
 import std/data/json
 import std/num/float64
-// import std/pretty/pprint
+import std/pretty/pprint
 import std/os/file
 import std/os/path
 
@@ -46,7 +46,7 @@ fun add-num(st: parse-state, s: sslice): exn parse-state
         Just(f) -> st.add-value(json/JSNum(f))
         _ -> throw("Invalid int " ++ s')
 
-fun recur/parse(st: parse-state, s: sslice): <pure,index> json
+fun recur/parse(st: parse-state, s: sslice): <pure> json
   match s.alexScan(0)
     AlexToken(s',len,p) ->
       // inc-index(len)
@@ -103,7 +103,7 @@ fun main()
       // No adults here
     ], // Trailing comma
     // something here 
-   }"#
+   }"#.parse
   s.pretty.show.println
   // for(1) fn(i)
   //   val s = read-text-file("/Users/timwhiting/rows3.json".path)
