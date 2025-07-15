@@ -59,7 +59,7 @@ fun lex-parse(input: string, p: () -> <console,ast<l>|e> a, ?lex: (string) -> <c
   
 fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -> pure string): <console,ast-error,pure|e> a
   var lexemes := lexemes0
-  var history := Cons((ctx _, "top", 0), Nil)
+  var history := Cons((ctx hole, "top", 0), Nil)
   val debug = True
   with override
     final ctl ast-error(e: string)
@@ -74,7 +74,7 @@ fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -
           lexemes := rst 
           match history
             Cons((h, msg, i), tl) ->
-              history := Cons((h ++ ctx Cons(l, _), msg, i + 1), tl)
+              history := Cons((h ++ ctx Cons(l, hole), msg, i + 1), tl)
             Nil -> 
               ast-error("unexpected top of context")
           Just(l)
@@ -94,7 +94,7 @@ fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -
           ast-error("mismatched reset")
     fun delimit(msg)
       // trace("Trying  " ++ history.take(10).reverse.map(snd).show ++ " " ++ msg)
-      history := Cons((ctx _, msg, 0), history)
+      history := Cons((ctx hole, msg, 0), history)
     fun progress-since(msg)
       fun progress(h)
         match h

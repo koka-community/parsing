@@ -16,8 +16,8 @@ type parse-state
 
 fun add-value(st: parse-state, js: json): exn parse-state
   match st
-    PObjValue(l, s, ps) -> PObjCommaEnd(l ++ ctx Cons((s, js), _), ps)
-    PList(l, ps) -> PListCommaEnd(l ++ ctx Cons(js, _), ps)
+    PObjValue(l, s, ps) -> PObjCommaEnd(l ++ ctx Cons((s, js), hole), ps)
+    PList(l, ps) -> PListCommaEnd(l ++ ctx Cons(js, hole), ps)
     PListCommaEnd(l, ps) -> ps.add-value(JSList(l ++. Cons(js, Nil)))
     Done -> Done(Just(js))
     _ -> throw("Invalid state for adding a value")
@@ -53,8 +53,8 @@ fun recur/parse(st: parse-state, s: sslice): <pure> json
       match p(s.subslice(0, len))
         JSWhite -> parse(st, s')
         JSComment -> parse(st, s')
-        JSArrayOpen -> parse(PList(ctx _, st), s')
-        JSObjOpen -> parse(PObjKey(ctx _, st), s')
+        JSArrayOpen -> parse(PList(ctx hole, st), s')
+        JSObjOpen -> parse(PObjKey(ctx hole, st), s')
         JSArrayClose -> parse(st.finish-value, s')
         JSObjClose -> parse(st.finish-value, s')
         JSStr(str) -> parse(st.add-str(str), s')

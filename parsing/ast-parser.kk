@@ -57,7 +57,7 @@ fun lex-parse(p: () -> <console,ast<l>|e> a, sourceName: string, input: string, 
   
 fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -> div string, ?range: (l) -> range): <console,ast-error,pure|e> a
   var lexemes := lexemes0
-  var history := Cons((ctx _, "top", 0), Nil)
+  var history := Cons((ctx hole, "top", 0), Nil)
   val debug = True
   with override
     final ctl ast-error(e: string, r: range)
@@ -67,11 +67,11 @@ fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a,
     fun take-all()
       val l = lexemes
       lexemes := Nil // TODO: This ruins the history -- especially with delimiting
-      // history := Cons((ctx _, "top", 0), Nil)
+      // history := Cons((ctx hole, "top", 0), Nil)
       l
     fun put-all(lexemes')
       lexemes := lexemes' // TODO: This ruins the history -- especially with delimiting
-      // history := Cons((ctx _, "top", 0), Nil)
+      // history := Cons((ctx hole, "top", 0), Nil)
     fun add-warning(w: string, r: range)
       ()
     fun pnext()
@@ -80,7 +80,7 @@ fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a,
           lexemes := rst 
           match history
             Cons((h, msg, i), tl) ->
-              history := Cons((h ++ ctx Cons(l, _), msg, i + 1), tl)
+              history := Cons((h ++ ctx Cons(l, hole), msg, i + 1), tl)
             Nil -> 
               ast-error("unexpected top of context", null)
           Just(l)
@@ -99,7 +99,7 @@ fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a,
         Nil ->
           ast-error("mismatched reset", null)
     fun delimit(msg)
-      history := Cons((ctx _, msg, 0), history)
+      history := Cons((ctx hole, msg, 0), history)
     fun undelimit(msg)
       match history
         Cons((lexes, str, _), Cons((lexes2, str2, i2), rst)) ->

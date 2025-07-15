@@ -10,8 +10,8 @@ type parse-state
 
 fun add-value(st: parse-state, js: json): exn parse-state
   match st
-    PObjValue(l, s, ps) -> PObjKey(l ++ ctx Cons((s, js), _), ps)
-    PList(l, ps) -> PList(l ++ ctx Cons(js, _), ps)
+    PObjValue(l, s, ps) -> PObjKey(l ++ ctx Cons((s, js), hole), ps)
+    PList(l, ps) -> PList(l ++ ctx Cons(js, hole), ps)
     Done -> Done(Just(js))
     _ -> throw("Invalid state for adding a value")
 
@@ -31,12 +31,12 @@ fun parse-json(str: string): pure json
       object := object.add-value(j)
     fun start-object()
       // trace(indent.spaces ++ "StartO")
-      object := PObjKey(ctx _, object)
+      object := PObjKey(ctx hole, object)
       indent := indent + 2
     fun start-array()
       // trace(indent.spaces ++ "StartA")
       indent := indent + 2
-      object := PList(ctx _, object)
+      object := PList(ctx hole, object)
     fun finish-object()
       indent := indent - 2
       // trace(indent.spaces ++ "FinishO")
