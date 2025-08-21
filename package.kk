@@ -1,4 +1,4 @@
-import kokac/config
+import kokaw/config
 
 fun package()
   dependencies
