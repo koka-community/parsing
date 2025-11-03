@@ -56,8 +56,7 @@ fun sslice/order2(s1: sslice, s2: sslice): order2<sslice>
 
 fun remove-deps(cache: rbmap<ruleid,rbmap<t,memo-state<v,t,e>>>): parse-cache<v,t>
   cache.map fn(m) 
-    m.value/map fn(ms) 
-      ms.vals
+    m.value/map(vals)
 
 fun settuple/join(s: rbset<(v,t)>, new: (v,t), ?t/order2: (t,t)-> pure order2<t>, ?v/order2: (v,v) -> pure order2<v>): pure (bool, rbset<(v,t)>)
   if s.contains(new) then (False, s)
