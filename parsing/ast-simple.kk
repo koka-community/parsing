@@ -119,7 +119,7 @@ fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -
         Nil -> Nothing
     fun peof()
       // if debug then
-        // trace("Parsing eof\n" ++ history.map(fn(x) "\tWhen parsing " ++ x.snd).join("\n") ++ "\n\nHad leftovers: " ++ lexemes.map(fn(x) x.show).join("\n"))
+        // trace("Parsing eof\n" ++ history.map("\tWhen parsing " ++ _.snd).join("\n") ++ "\n\nHad leftovers: " ++ lexemes.map(show).join("\n"))
       match lexemes
         Cons(l, _) ->
           ast-error("peof expected end of file" ++ l.show)
@@ -137,7 +137,7 @@ fun parse-lexemes(lexemes0: list<l>, p: () -> <console,ast<l>|e> a, ?show: (l) -
           False
     fun ptrace(s: string)
       if debug then
-        trace(s ++ "\n  " ++ history.map(fn(x) "When parsing " ++ x.snd).join("\n\t") ++ " next token: " ++ lexemes.take(1).map(show).join(","))
+        trace(s ++ "\n  " ++ history.map("When parsing " ++ _.snd).join("\n\t") ++ " next token: " ++ lexemes.take(1).map(show).join(","))
   p()
 
 
@@ -241,7 +241,7 @@ fun parse-choices(str: string, ps: list<() -> <ast<l>|e> a>): <ast<l>|e> a
     find(ps)
 
 fun parse-error(e: string): ast-error a
-  ast-error("invalid syntax" ++ e.list.drop-while(fn(x) x != ':').string)
+  ast-error("invalid syntax" ++ e.list.drop-while(_ != ':').string)
 
 fun p-braced(pL, pR, p)
   pL()

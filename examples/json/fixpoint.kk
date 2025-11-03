@@ -8,7 +8,7 @@ import std/data/json
 import json-fixpoint
 
 fun parse-stringchars(): parse<pvalue,sslice,<>> string
-  parse-manychar(RAnyChar, fn(c) c != '"')
+  parse-manychar(RAnyChar, _ != '"')
 
 fun parse-string(): parse<pvalue,sslice,<>> string
   with memo(RString)

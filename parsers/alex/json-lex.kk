@@ -159,7 +159,7 @@ inline fun alexPrevCharMatches(f: (char) -> pure bool, _, input__: alexInput, _,
 // alexPrevCharIsOneOfPred :: Array Char Bool -> AlexAccPred _
 inline fun alexPrevCharIsOneOf(arr: list<char>, _, input__: alexInput, _, _): <pure> bool
   val prev = alexInputPrevChar(input__)
-  arr.any(fn(c) c == prev)
+  arr.any(_ == prev)
 
 // alexRightContext :: Int -> AlexAccPred _
 inline fun alexRightContext(sc:int, user__: maybe<alexUser>, _, _, input__: alexInput): <pure|e> bool

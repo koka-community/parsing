@@ -313,7 +313,7 @@ pub fun parse-float(): <parse<r>|e> float64
   val result = parse-leading-dot-float.or(parse-whole-float)
   match parse-float64(result.string)
     Just(i) -> i
-    Nothing -> failHere(fn(p) Expected("parsable float " ++ result.string, pos))
+    Nothing -> failHere(fn(_) Expected("parsable float " ++ result.string, pos))
 
 fun parse-whole-float(): <parse<r>|e> sslice
   take-pattern(wholeFloatRegex)
@@ -329,7 +329,7 @@ fun parse-int(): <parse<r>|e> int
       val pos = offset()
       match parse-int(x.string)
         Just(i) -> i
-        Nothing -> failHere(fn(p) Expected("int", pos))
+        Nothing -> failHere(fn(_) Expected("int", pos))
 
 
 val alphaRegex = "^[a-zA-Z]".regex()

@@ -69,8 +69,8 @@ fun generatePerson()
   Person(
     name= "Gpa" ++ random-int().show, 
     age=random-int(), 
-    children=list(1,min(1,random-int()%4)).map(fn(c) Child("another child"++ random-int().show)), 
-    adult-children=list(1,if random-int()%4 > 1 then random-int() % 4 else 0).map(fn(c) generatePerson())
+    children=list(1,min(1,random-int()%4)).map(fn(_) Child("another child" ++ random-int().show)), 
+    adult-children=list(1,if random-int()%4 > 1 then random-int() % 4 else 0).map(fn(_) generatePerson())
   )
 
 fun generatePeople(n: int)
@@ -85,7 +85,7 @@ fun main()
   val pjson = generated.map(to-json).map(show)
   val tend = now()
   // ("[" ++ pjson.join(",") ++ "]").println
-  val persons = pjson.map(fn(p) p.parse.parse(person/from-json))
+  val persons = pjson.map(_.parse.parse(person/from-json))
   val tend2 = now();
   val nump = persons.map(people/count).sum
   val toj = (tend - tstart).milli-seconds

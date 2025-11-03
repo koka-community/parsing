@@ -95,7 +95,7 @@ fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a,
             lexemes := h ++. lexemes
             history := rst
             if debug then
-              trace("Resetting " ++ str ++ "\n" ++ history.map(fn(x) "\tWhen parsing " ++ x.snd).join("\n") ++ " at " ++ lexemes.head.map(show).default("eof") ++ "\nputting back:\n\t" ++ (h ++. Nil).map(show).join("\n\t"))
+              trace("Resetting " ++ str ++ "\n" ++ history.map("\tWhen parsing " ++ _.snd).join("\n") ++ " at " ++ lexemes.head.map(show).default("eof") ++ "\nputting back:\n\t" ++ (h ++. Nil).map(show).join("\n\t"))
         Nil ->
           ast-error("mismatched reset", null)
     fun delimit(msg)
@@ -116,7 +116,7 @@ fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a,
         Nil -> Nothing
     fun peof()
       if debug then
-        trace("Parsing eof\n" ++ history.map(fn(x) "\tWhen parsing " ++ x.snd).join("\n") ++ "\n\nHad leftovers: " ++ lexemes.map(fn(x) x.show).join("\n"))
+        trace("Parsing eof\n" ++ history.map("\tWhen parsing " ++ _.snd).join("\n") ++ "\n\nHad leftovers: " ++ lexemes.map(show).join("\n"))
       match lexemes
         Cons(l, _) ->
           ast-error("peof expected end of file", l.range)
@@ -134,7 +134,7 @@ fun parse-lexemes(src: source, lexemes0: list<l>, p: () -> <console,ast<l>|e> a,
           False
     fun ptrace(s: string)
       if debug then
-        trace(s ++ "\n  " ++ history.map(fn(x) "When parsing " ++ x.snd).join("\n\t") ++ " next token: " ++ lexemes.take(1).map(show).join(","))
+        trace(s ++ "\n  " ++ history.map("When parsing " ++ _.snd).join("\n\t") ++ " next token: " ++ lexemes.take(1).map(show).join(","))
   p()
 
 
@@ -237,7 +237,7 @@ fun pparse-choices(str: string, ps: list<() -> <ast<l>|e> a>, ?a/range: (l) -> r
   find(ps)
 
 fun parse-error(r: range, e: string)
-  ast-error("invalid syntax" ++ e.list.drop-while(fn(x) x != ':').string, r)
+  ast-error("invalid syntax" ++ e.list.drop-while(_ != ':').string, r)
 
 fun p-braced(p, pL, pR)
   pL()

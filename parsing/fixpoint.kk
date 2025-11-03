@@ -141,13 +141,13 @@ fun run-fixpoint(init: t, rid: ruleid, parser: parser<v,t,b,e>,
           Just(tokenMap) ->
             match tokenMap.lookup(start, ?order2 = t/order2)
               Just(Memo-state(deps, vals)) ->
-                cache := cache.set(s, tokenMap.set(start, Memo-state(Cons(fn(r) resume(r), deps), vals)))
-                match vals.list.map(fn(cv) resume(cv))
+                cache := cache.set(s, tokenMap.set(start, Memo-state(Cons(_.resume, deps), vals)))
+                match vals.list.map(_.resume)
                   [] -> Nothing
                   res -> res.take-all
       // A variant of nondet that backtracks the state (tokens) on failure and takes the longest match
       ctl do-each(fns)
-        fns.map-indexed(fn(i, f) resume(f)).take-all
+        fns.map-indexed(fn(_, f) resume(f)).take-all
       // Finds the first successful parser
       ctl do-choice(fns) 
         fun fx(fns')

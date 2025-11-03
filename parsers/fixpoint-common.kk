@@ -203,7 +203,7 @@ fun peof(): parse<pvalue,sslice,<>> pvalue
 
 // Parses many spaces (tabs and spaces) not including newlines
 fun pspaces(): parse<pvalue,sslice,<>> string
-  parse-manychar(RWhite, fn(i) i.is-space)
+  parse-manychar(RWhite, _.is-space)
 
 // Parses an optional sequence of spaces
 fun pmspaces()
