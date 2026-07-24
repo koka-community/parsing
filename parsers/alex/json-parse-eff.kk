@@ -52,7 +52,7 @@ fun parse-json(str: string): pure json
     return(x)
       match object
         Done(Just(j)) -> j
-  alex-scan(str.slice, 0)
+  alex-scan(str.bytes.slice, 0)
   // trace("Done")
 
 fun main()

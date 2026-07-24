@@ -1,5 +1,6 @@
 {
 import std/data/json
+import std/core/bslice
 import std/core-extras
 import std/num/float64
 
@@ -19,12 +20,12 @@ type jslex
   JSWhite
 
 alias action = sslice -> pure jslex
-alias alexInput = sslice
-alias alexUser = ()
-fun alexGetByte(s: alexInput): maybe<(char, alexInput)>
+alias alex-input = sslice
+alias alex-user = ()
+fun alexGetByte(s: alex-input): maybe<(char, alex-input)>
   s.next()
 
-fun alexInputPrevChar(s: alexInput): char
+fun alexInputPrevChar(s: alex-input): char
   '_'
 
 }

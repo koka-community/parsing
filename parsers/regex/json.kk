@@ -7,7 +7,7 @@
 ----------------------------------------------------------------------------*/
 
 import parsing/regex-parser
-import std/data/linearmap
+import std/data/linear-map
 import std/text/regex
 import std/num/float64
 
@@ -20,7 +20,7 @@ type jsValue
   JsArray(l: list<jsValue>)
   JsObject(o: jsObject<jsValue>)
 
-alias jsObject<a> = linearMap<string, a>
+alias jsObject<a> = linear-map<string, a>
 
 fun toString(v: jsValue)
   match v

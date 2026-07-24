@@ -1,5 +1,6 @@
 {
 import std/data/json
+import std/core/bslice
 import std/core-extras
 import std/num/float64
 
@@ -79,14 +80,14 @@ program :-
 <0> "true"                   { fn() emit(JSBool(True)) }
 <0> "false"                  { fn() emit(JSBool(False)) }
 <0> "null"                   { fn() emit(JSNull) }
-<0> @string                  { fn() emit(JSString(get-slice().advance(1).extend(-2).string)) }
+<0> @string                  { fn() emit(JSString(get-slice().advance(1).extend(-2).bytes.string)) }
 <0> "{"                      { fn() {push-state(object); push-state(objectfield); start-object()}} -- Enter into object state expecting first key
 <0> "["                      { fn() {push-state(array); push-state(0); start-array()} } -- Enter into array state expecting first value.
 <0> "]"                      { fn() {pop-state(); pop-state(); pop-state(); finish-array(); } } -- Allows trailing commas, but also need to pop the array state, the state object
 
 <objectfield> @comment       { fn() () }
 <objectfield> @whitespace    { fn() () }
-<objectfield> @string        { fn() {add-key(get-slice().advance(1).extend(-2).string); replace-state(objecttransition)}; } -- Key found, expect colon
+<objectfield> @string        { fn() {add-key(get-slice().advance(1).extend(-2).bytes.string); replace-state(objecttransition)}; } -- Key found, expect colon
 <objectfield> "}"            { fn() {pop-state(); pop-state(); finish-object()} }  -- Allows trailing commas
 
 <objecttransition> @comment    { fn() () }

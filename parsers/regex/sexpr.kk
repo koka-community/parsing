@@ -7,7 +7,7 @@
 ----------------------------------------------------------------------------*/
 
 import parsing/regex-parser
-import std/data/linearmap
+import std/data/linear-map
 import std/text/regex
 import std/os/path
 import std/os/file
@@ -307,7 +307,7 @@ fun sexpr/(==)(s1: sexpr, s2: sexpr): bool
     (SCons(h1, t1), SCons(h2, t2)) -> (==)(h1.pretend-decreasing, h2.pretend-decreasing) && (==)(t1.pretend-decreasing, t2.pretend-decreasing)
     _ -> False
 
-alias nameMap = linearMap<string,int>
+alias nameMap = linear-map<string,int>
 val globalNameGen:ref<global,nameMap> = unsafe-total{ref(LinearMap([]))}
 fun genName(n: string): sexpr
   unsafe-total
