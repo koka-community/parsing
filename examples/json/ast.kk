@@ -1,7 +1,7 @@
 import parsers/alex/json-lex
 import parsing/ast-simple
 import std/data/json
-import std/data/linearmap
+import std/data/linear-map
 import std/num/float64
 import std/pretty/pprint
 

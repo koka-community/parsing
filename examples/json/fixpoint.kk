@@ -3,7 +3,7 @@ import parsing/fixpoint
 import parsing/fix-pretty
 import std/core-extras
 import std/pretty/pprint
-import std/data/linearmap
+import std/data/linear-map
 import std/data/json
 import json-fixpoint
 
